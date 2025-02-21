@@ -4,10 +4,10 @@ author: rick-anderson
 description: Learn about the new features in ASP.NET Core 7.0.
 ms.author: riande
 ms.custom: mvc
-ms.date: 11/01/2022
+ms.date: 11/07/2022
 uid: aspnetcore-7
 ---
-# What's new in ASP.NET Core 7.0 preview
+# What's new in ASP.NET Core 7.0
 
 This article highlights the most significant changes in ASP.NET Core 7.0 with links to relevant documentation.
 
@@ -140,6 +140,19 @@ The following code uses the [`Ok<TValue>`](/dotnet/api/microsoft.aspnetcore.http
 
 For more information, see [`IResult` implementation types](xref:fundamentals/minimal-apis/test-min-api#iit7).
 
+### New HttpResult interfaces
+
+The following interfaces in the <xref:Microsoft.AspNetCore.Http> namespace provide a way to detect the `IResult` type at runtime, which is a common pattern in filter implementations:
+
+* <xref:Microsoft.AspNetCore.Http.IContentTypeHttpResult>
+* <xref:Microsoft.AspNetCore.Http.IFileHttpResult>
+* <xref:Microsoft.AspNetCore.Http.INestedHttpResult>
+* <xref:Microsoft.AspNetCore.Http.IStatusCodeHttpResult>
+* <xref:Microsoft.AspNetCore.Http.IValueHttpResult>
+* <xref:Microsoft.AspNetCore.Http.IValueHttpResult%601>
+
+For more information, see [IHttpResult interfaces](xref:fundamentals/minimal-apis/responses#httpresultinterfaces7).
+
 ### OpenAPI improvements for minimal APIs
 
 <a name="openapinuget"></a>
@@ -160,7 +173,7 @@ The [`WithOpenApi`](https://github.com/dotnet/aspnetcore/blob/8a4b4deb09c04134f2
 
 Minimal APIs now support annotating operations with descriptions and summaries for OpenAPI spec generation. You can call extension methods <xref:Microsoft.AspNetCore.Http.OpenApiRouteHandlerBuilderExtensions.WithDescription%2A> and <xref:Microsoft.AspNetCore.Http.OpenApiRouteHandlerBuilderExtensions.WithSummary%2A> or use attributes [[EndpointDescription]](xref:Microsoft.AspNetCore.Http.EndpointDescriptionAttribute) and [[EndpointSummary]](xref:Microsoft.AspNetCore.Http.EndpointSummaryAttribute)).
 
-For more information, see [OpenAPI in minimal API apps](xref:fundamentals/minimal-apis/openapi?view=aspnetcore-7.0)
+For more information, see [OpenAPI in minimal API apps](xref:fundamentals/openapi/aspnetcore-openapi?view=aspnetcore-7.0)
 
 ### File uploads using IFormFile and IFormFileCollection
 
@@ -182,7 +195,7 @@ The [`[AsParameters]` attribute](xref:Microsoft.AspNetCore.Http.AsParametersAttr
 
 The problem details service implements the <xref:Microsoft.AspNetCore.Http.IProblemDetailsService> interface, which supports creating [Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc7807.html).
 
-For more information, see [Problem details service](xref:web-api/handle-errors##pds7)
+For more information, see [Problem details service](xref:web-api/handle-errors#pds7).
 
 ### Route groups
 
@@ -196,7 +209,7 @@ gRPC JSON transcoding is an extension for ASP.NET Core that creates RESTful JSON
 
 * Apps to call gRPC services with familiar HTTP concepts.
 * ASP.NET Core gRPC apps to support both gRPC and RESTful JSON APIs without replicating functionality.
-* Experimental support for generating OpenAPI from transcoded RESTful APIs by integrating with with [Swashbuckle](xref:tutorials/get-started-with-swashbuckle).
+* Experimental support for generating OpenAPI from transcoded RESTful APIs by integrating with [Swashbuckle](xref:tutorials/get-started-with-swashbuckle).
 
 For more information, see [gRPC JSON transcoding in ASP.NET Core gRPC apps](xref:grpc/json-transcoding?view=aspnetcore-7.0) and <xref:grpc/json-transcoding-openapi>.
 
@@ -277,6 +290,16 @@ For more information, see <xref:blazor/components/index?view=aspnetcore-7.0#blaz
 
 ### Bind modifiers (`@bind:after`, `@bind:get`, `@bind:set`)
 
+> [!IMPORTANT]
+> The `@bind:after`/`@bind:get`/`@bind:set` features are receiving further updates at this time. To take advantage of the latest updates, confirm that you've installed the [latest SDK](https://dotnet.microsoft.com/download/dotnet/7.0).
+>
+> Using an event callback parameter (`[Parameter] public EventCallback<string> ValueChanged { get; set; }`) isn't supported. Instead, pass an <xref:System.Action>-returning or <xref:System.Threading.Tasks.Task>-returning method to `@bind:set`/`@bind:after`.
+>
+> For more information, see the following resources:
+>
+> * [Blazor `@bind:after` not working on .NET 7 RTM release (dotnet/aspnetcore #44957)](https://github.com/dotnet/aspnetcore/issues/44957)
+> * [`BindGetSetAfter701` sample app (javiercn/BindGetSetAfter701 GitHub repository)](https://github.com/javiercn/BindGetSetAfter701)
+
 In .NET 7, you can run asynchronous logic after a binding event has completed using the new `@bind:after` modifier. In the following example, the `PerformSearch` asynchronous method runs automatically after any changes to the search text are detected:
 
 ```razor
@@ -299,24 +322,65 @@ In .NET 7, it's also easier to set up binding for component parameters. Componen
 
 The `@bind:get` and `@bind:set` modifiers are always used together.
 
-Example:
+Examples:
 
 ```razor
-<input @bind:get="Value" @bind:set="ValueChanged" />
+@* Elements *@
+
+<input type="text" @bind="text" @bind:after="() => { }" />
+
+<input type="text" @bind:get="text" @bind:set="(value) => { }" />
+
+<input type="text" @bind="text" @bind:after="AfterAsync" />
+
+<input type="text" @bind:get="text" @bind:set="SetAsync" />
+
+<input type="text" @bind="text" @bind:after="() => { }" />
+
+<input type="text" @bind:get="text" @bind:set="(value) => { }" />
+
+<input type="text" @bind="text" @bind:after="AfterAsync" />
+
+<input type="text" @bind:get="text" @bind:set="SetAsync" />
+
+@* Components *@
+
+<InputText @bind-Value="text" @bind-Value:after="() => { }" />
+
+<InputText @bind-Value:get="text" @bind-Value:set="(value) => { }" />
+
+<InputText @bind-Value="text" @bind-Value:after="AfterAsync" />
+
+<InputText @bind-Value:get="text" @bind-Value:set="SetAsync" />
+
+<InputText @bind-Value="text" @bind-Value:after="() => { }" />
+
+<InputText @bind-Value:get="text" @bind-Value:set="(value) => { }" />
+
+<InputText @bind-Value="text" @bind-Value:after="AfterAsync" />
+
+<InputText @bind-Value:get="text" @bind-Value:set="SetAsync" />
 
 @code {
-    [Parameter]
-    public TValue? Value { get; set; }
+    private string text = "";
 
-    [Parameter]
-    public EventCallback<TValue> ValueChanged { get; set; }
+    private void After(){}
+    private void Set() {}
+    private Task AfterAsync() { return Task.CompletedTask; }
+    private Task SetAsync(string value) { return Task.CompletedTask; }
 }
 ```
+
+For more information on the `InputText` component, see <xref:blazor/forms/input-components>.
+
+<!--
 
 For more information, see the following content in the *Data binding* article:
 
 * [Introduction](xref:blazor/components/data-binding?view=aspnetcore-7.0)
 * [Bind across more than two components](xref:blazor/components/data-binding?view=aspnetcore-7.0#bind-across-more-than-two-components)
+
+-->
 
 ### Hot Reload improvements
 
@@ -373,13 +437,13 @@ For more information, see [Developers targeting browser-wasm can use Web Crypto 
 
 You can now inject services into custom validation attributes. Blazor sets up the `ValidationContext` so that it can be used as a service provider.
 
-For more information, see <xref:blazor/forms-and-input-components?view=aspnetcore-7.0#custom-validation-attributes>.
+For more information, see <xref:blazor/forms/validation?view=aspnetcore-7.0#custom-validation-attributes>.
 
 ### `Input*` components outside of an `EditContext`/`EditForm`
 
 The built-in input components are now supported outside of a form in Razor component markup.
 
-For more information, see <xref:blazor/forms-and-input-components?view=aspnetcore-7.0#built-in-input-components>.
+For more information, see <xref:blazor/forms/input-components?view=aspnetcore-7.0>.
 
 ### Project template changes
 
@@ -393,7 +457,7 @@ Several additional changes were made to the Blazor project templates. It isn't f
 
 The new `QuickGrid` component provides a convenient data grid component for most common requirements and as a reference architecture and performance baseline for anyone building Blazor data grid components.
 
-For more information, see <xref:blazor/components/index?view=aspnetcore-7.0#quickgrid-component>.
+For more information, see <xref:blazor/components/quickgrid>.
 
 Live demo: [QuickGrid for Blazor sample app](https://aspnet.github.io/quickgridsamples/)
 
@@ -434,7 +498,7 @@ JavaScript `[JSImport]`/`[JSExport]` interop API is a new low-level mechanism fo
 For more information:
 
 * <xref:blazor/js-interop/import-export-interop>: Pertains only to Blazor WebAssembly apps.
-* <xref:client-side/dotnet-interop>: Pertains only to JavaScript apps that don't depend on the Blazor UI component model.
+* <xref:client-side/dotnet-interop/index>: Pertains only to JavaScript apps that don't depend on the Blazor UI component model.
 
 ### Conditional registration of the authentication state provider
 
@@ -453,10 +517,10 @@ In the preceding example, `ExternalAuthStateProvider` is the developer's service
 
 New features in the `wasm-tools` workload for .NET 7 that help improve performance and handle exceptions:
 
-* [WebAssembly Single Instruction, Multiple Data (SIMD)](https://github.com/WebAssembly/simd/blob/master/proposals/simd/SIMD.md) support (only with AOT, not supported by Apple Safari)
+* [WebAssembly Single Instruction, Multiple Data (SIMD)](https://wikipedia.org/wiki/Single_instruction,_multiple_data) support (only with AOT, not supported by Apple Safari)
 * WebAssembly exception handling support
 
-For more information, see <xref:blazor/tooling?view=aspnetcore-7.0#net-webassembly-build-tools>.
+For more information, see <xref:blazor/tooling/webassembly?view=aspnetcore-7.0>.
 
 ## Blazor Hybrid
 
@@ -492,7 +556,7 @@ For more information, see [Overview of caching](xref:performance/caching/overvie
 This release:
 
 * Makes HTTP/3 fully supported by ASP.NET Core, it's no longer experimental.
-* Improves Kestrel’s support for HTTP/3. The two main areas of improvement are feature parity with HTTP/1.1 and HTTP/2, and performance.
+* Improves Kestrel's support for HTTP/3. The two main areas of improvement are feature parity with HTTP/1.1 and HTTP/2, and performance.
 * Provides full support for <xref:Microsoft.AspNetCore.Hosting.ListenOptionsHttpsExtensions.UseHttps(Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions,System.Security.Cryptography.X509Certificates.X509Certificate2)> with HTTP/3. Kestrel offers advanced options for configuring connection certificates, such as hooking into [Server Name Indication (SNI)](https://wikipedia.org/wiki/Server_Name_Indication).
 * Adds support for HTTP/3 on [HTTP.sys](xref:fundamentals/servers/httpsys) and [IIS](xref:host-and-deploy/iis/modules).
 
@@ -520,7 +584,7 @@ Changes were made in the HTTP/2 frame writing code that improves performance whe
 
 ### Http/2 WebSockets support
 
-.NET 7 introduces Websockets over HTTP/2 support for Kestrel, the SignalR JavaScript client, and SignalR with Blazor WebAssembly.
+.NET 7 introduces WebSockets over HTTP/2 support for Kestrel, the SignalR JavaScript client, and SignalR with Blazor WebAssembly.
 
 Using WebSockets over HTTP/2 takes advantage of new features such as:
 
@@ -541,7 +605,7 @@ In .NET 7, Kestrel's memory pool is partitioned the same way as its I/O queue, w
 
 ### `ServerReady` event to measure startup time
 
-Apps using [EventSource](/dotnet/api/system.diagnostics.tracing.eventsource) can measure the startup time to understand and optimize startup performance. The new [`ServerReady`](https://source.dot.net/#Microsoft.AspNetCore.Hosting/Internal/HostingEventSource.cs,76) event in <xref:Microsoft.AspNetCore.Hosting?displayProperty=fullName> represents the point where the server is ready to respond to requests.
+Apps using <!--keep--> [EventSource](/dotnet/api/system.diagnostics.tracing.eventsource) can measure the startup time to understand and optimize startup performance. The new [`ServerReady`](https://source.dot.net/#Microsoft.AspNetCore.Hosting/Internal/HostingEventSource.cs,76) event in <xref:Microsoft.AspNetCore.Hosting?displayProperty=fullName> represents the point where the server is ready to respond to requests.
 
 ## Server
 
