@@ -6,10 +6,11 @@ monikerRange: '>= aspnetcore-2.2'
 ms.author: riande
 ms.custom: mvc
 ms.date: 01/13/2020
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: host-and-deploy/iis/transform-webconfig
 ---
 # Transform web.config
+
+[!INCLUDE[](~/includes/not-latest-version.md)]
 
 By [Vijay Ramakrishnan](https://github.com/vijayrkn)
 
