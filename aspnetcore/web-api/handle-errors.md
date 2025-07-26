@@ -1,17 +1,226 @@
 ---
-title: Handle errors in ASP.NET Core web APIs
-author: pranavkm
-description: Learn about error handling with ASP.NET Core web APIs.
+title: Handle errors in ASP.NET Core controller-based web APIs
+author: tdykstra
+description: Learn about error handling with ASP.NET Core controller-based web APIs.
 monikerRange: '>= aspnetcore-3.1'
-ms.author: prkrishn
+ms.author: tdykstra
 ms.custom: mvc
-ms.date: 11/09/2021
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.date: 05/30/2024
 uid: web-api/handle-errors
 ---
-# Handle errors in ASP.NET Core web APIs
+# Handle errors in ASP.NET Core controller-based web APIs
 
-:::moniker range=">= aspnetcore-6.0"
+[!INCLUDE[](~/includes/not-latest-version.md)]
+
+:::moniker range=">= aspnetcore-7.0"
+
+This article describes how to handle errors and customize error handling in controller-based ASP.NET Core web APIs. For information about error handling in minimal APIs, see <xref:fundamentals/error-handling> and <xref:fundamentals/minimal-apis/handle-errors>.
+
+<a name="dep7"></a>
+
+## Developer Exception Page
+
+[!INCLUDE [](../includes/developer-exception-page.md)]
+
+To see the Developer Exception Page:
+
+* Add the following controller action to a controller-based API. The action throws an exception when the endpoint is requested.
+
+  :::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Controllers/ErrorsController.cs" id="snippet_Throw":::
+
+* Run the app in the [development environment](xref:fundamentals/environments).
+* Go to the endpoint defined by the controller action.
+
+## Exception handler
+
+In non-development environments, use [Exception Handling Middleware](xref:fundamentals/error-handling) to produce an error payload:
+
+1. In `Program.cs`, call <xref:Microsoft.AspNetCore.Builder.ExceptionHandlerExtensions.UseExceptionHandler%2A> to add the Exception Handling Middleware:
+
+    :::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Program.cs" id="snippet_Middleware" highlight="7":::
+
+1. Configure a controller action to respond to the `/error` route:
+
+    :::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Controllers/ErrorsController.cs" id="snippet_HandleError":::
+
+The preceding `HandleError` action sends an [RFC 7807](https://tools.ietf.org/html/rfc7807)-compliant payload to the client.
+
+> [!WARNING]
+> Don't mark the error handler action method with HTTP method attributes, such as `HttpGet`. Explicit verbs prevent some requests from reaching the action method.
+>
+> For web APIs that use [Swagger / OpenAPI](xref:tutorials/web-api-help-pages-using-swagger), mark the error handler action with the [[ApiExplorerSettings]](xref:Microsoft.AspNetCore.Mvc.ApiExplorerSettingsAttribute) attribute and set its <xref:Microsoft.AspNetCore.Mvc.ApiExplorerSettingsAttribute.IgnoreApi%2A> property to `true`. This attribute configuration excludes the error handler action from the app's OpenAPI specification:
+>
+> ```csharp
+> [ApiExplorerSettings(IgnoreApi = true)]
+> ```
+>
+> Allow anonymous access to the method if unauthenticated users should see the error.
+
+Exception Handling Middleware can also be used in the Development environment to produce a consistent payload format across all environments:
+
+1. In `Program.cs`, register environment-specific Exception Handling Middleware instances:
+
+    :::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Snippets/Program.cs" id="snippet_ConsistentEnvironments":::
+
+    In the preceding code, the middleware is registered with:
+
+    * A route of `/error-development` in the Development environment.
+    * A route of `/error` in non-Development environments.
+    
+    <a name="pd"></a>
+1. Add controller actions for both the Development and non-Development routes:
+
+    :::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Controllers/ErrorsController.cs" id="snippet_ConsistentEnvironments":::
+
+## Use exceptions to modify the response
+
+The contents of the response can be modified from outside of the controller using a custom exception and an action filter:
+
+1. Create a well-known exception type named `HttpResponseException`:
+
+    :::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Snippets/HttpResponseException.cs" id="snippet_Class":::
+
+1. Create an action filter named `HttpResponseExceptionFilter`:
+
+    :::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Snippets/HttpResponseExceptionFilter.cs" id="snippet_Class":::
+
+    The preceding filter specifies an `Order` of the maximum integer value minus 10. This `Order` allows other filters to run at the end of the pipeline.
+
+1. In `Program.cs`, add the action filter to the filters collection:
+
+    :::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Snippets/Program.cs" id="snippet_AddHttpResponseExceptionFilter":::
+
+## Validation failure error response
+
+For web API controllers, MVC responds with a <xref:Microsoft.AspNetCore.Mvc.ValidationProblemDetails> response type when model validation fails. MVC uses the results of <xref:Microsoft.AspNetCore.Mvc.ApiBehaviorOptions.InvalidModelStateResponseFactory> to construct the error response for a validation failure. The following example replaces the default factory with an implementation that also supports formatting responses as XML, in `Program.cs`:
+
+:::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Snippets/Program.cs" id="snippet_ConfigureInvalidModelStateResponseFactory":::
+
+## Client error response
+
+An *error result* is defined as a result with an HTTP status code of 400 or higher. For web API controllers, MVC transforms an error result to produce a <xref:Microsoft.AspNetCore.Mvc.ProblemDetails>.
+
+The automatic creation of a `ProblemDetails` for error status codes is enabled by default, but error responses can be configured in one of the following ways:
+
+1. Use the [problem details service](#pds7)
+1. [Implement ProblemDetailsFactory](#implement-problemdetailsfactory)
+1. [Use ApiBehaviorOptions.ClientErrorMapping](#use-apibehavioroptionsclienterrormapping)
+
+### Default problem details response
+
+The following `Program.cs` file was generated by the web application templates for API controllers:
+
+:::code language="csharp" source="~/../AspNetCore.Docs.Samples/fundamentals/middleware/problem-details-service/Program.cs" id="snippet_default":::
+
+Consider the following controller, which returns <xref:Microsoft.AspNetCore.Http.HttpResults.BadRequest> when the input is invalid:
+
+:::code language="csharp" source="~/../AspNetCore.Docs.Samples/fundamentals/middleware/problem-details-service/Controllers/ValuesController.cs" id="snippet_1":::
+
+A problem details response is generated with the preceding code when any of the following conditions apply:
+
+* The `/api/values2/divide` endpoint is called with a zero denominator.
+* The `/api/values2/squareroot` endpoint is called with a radicand less than zero.
+
+The default problem details response body has the following `type`, `title`, and `status` values:
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+  "title": "Bad Request",
+  "status": 400,
+  "traceId": "00-84c1fd4063c38d9f3900d06e56542d48-85d1d4-00"
+}
+```
+
+<a name="pds7"></a>
+
+### Problem details service
+
+ASP.NET Core supports creating [Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc9457) using the <xref:Microsoft.AspNetCore.Http.IProblemDetailsService>. For more information, see the [Problem details service](/aspnet/core/fundamentals/error-handling#problem-details).
+
+The following code configures the app to generate a problem details response for all HTTP client and server error responses that ***don't have body content yet***:
+
+:::code language="csharp" source="~/../AspNetCore.Docs.Samples/fundamentals/middleware/problem-details-service/Program.cs" id="snippet_apishort" highlight="4,8-9,13":::
+
+Consider the API controller from the preceding section, which returns <xref:Microsoft.AspNetCore.Http.HttpResults.BadRequest> when the input is invalid:
+
+:::code language="csharp" source="~/../AspNetCore.Docs.Samples/fundamentals/middleware/problem-details-service/Controllers/ValuesController.cs" id="snippet_1":::
+
+A problem details response is generated with the preceding code when any of the following conditions apply:
+
+* An invalid input is supplied.
+* The URI has no matching endpoint.
+* An unhandled exception occurs.
+
+The automatic creation of a `ProblemDetails` for error status codes is disabled when the <xref:Microsoft.AspNetCore.Mvc.ApiBehaviorOptions.SuppressMapClientErrors%2A> property is set to `true`:
+
+:::code language="csharp" source="~/../AspNetCore.Docs.Samples/fundamentals/middleware/problem-details-service/Program.cs" id="snippet_disable" highlight="4-7":::
+
+Using the preceding code, when an API controller returns `BadRequest`, an [HTTP 400](https://developer.mozilla.org/docs/Web/HTTP/Status/400) response status is returned with no response body. `SuppressMapClientErrors` prevents a `ProblemDetails` response from being created, even when calling `WriteAsync` for an API Controller endpoint. `WriteAsync` is explained later in this article.
+
+The next section shows how to customize the problem details response body, using <xref:Microsoft.AspNetCore.Http.ProblemDetailsOptions.CustomizeProblemDetails>, to return a more helpful response. For more customization options, see [Customizing problem details](/aspnet/core/fundamentals/error-handling#cpd7).
+
+#### Customize problem details with `CustomizeProblemDetails`
+
+The following code uses <xref:Microsoft.AspNetCore.Http.ProblemDetailsOptions> to set <xref:Microsoft.AspNetCore.Http.ProblemDetailsOptions.CustomizeProblemDetails>:
+
+:::code language="csharp" source="~/../AspNetCore.Docs.Samples/fundamentals/middleware/problem-details-service/Program.cs" id="snippet_api_controller" highlight="6":::
+
+The updated API controller:
+
+:::code language="csharp" source="~/../AspNetCore.Docs.Samples/fundamentals/middleware/problem-details-service/Controllers/ValuesController.cs" id="snippet"  highlight="9-17,27-35":::
+
+The following code contains the `MathErrorFeature` and `MathErrorType`, which are used with the preceding sample:
+
+:::code language="csharp" source="~/../AspNetCore.Docs.Samples/fundamentals/middleware/problem-details-service/MathErrorFeature.cs" :::
+
+A problem details response is generated with the preceding code when any of the following conditions apply:
+
+* The `/divide` endpoint is called with a zero denominator.
+* The `/squareroot` endpoint is called with a radicand less than zero.
+* The URI has no matching endpoint.
+
+The problem details response body contains the following when either `squareroot` endpoint is called with a radicand less than zero:
+
+```json
+{
+  "type": "https://en.wikipedia.org/wiki/Square_root",
+  "title": "Bad Input",
+  "status": 400,
+  "detail": "Negative or complex numbers are not allowed."
+}
+```
+
+[View or download sample code](https://github.com/dotnet/AspNetCore.Docs.Samples/tree/main/fundamentals/middleware/problem-details-service)
+
+
+### Implement `ProblemDetailsFactory`
+
+MVC uses <xref:Microsoft.AspNetCore.Mvc.Infrastructure.ProblemDetailsFactory?displayProperty=fullName> to produce all instances of <xref:Microsoft.AspNetCore.Mvc.ProblemDetails> and <xref:Microsoft.AspNetCore.Mvc.ValidationProblemDetails>. This factory is used for:
+
+* Client error responses
+* Validation failure error responses
+* <xref:Microsoft.AspNetCore.Mvc.ControllerBase.Problem%2A?displayProperty=nameWithType> and <xref:Microsoft.AspNetCore.Mvc.ControllerBase.ValidationProblem%2A?displayProperty=nameWithType>
+
+To customize the problem details response, register a custom implementation of <xref:Microsoft.AspNetCore.Mvc.Infrastructure.ProblemDetailsFactory> in `Program.cs`:
+
+:::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Snippets/Program.cs" id="snippet_ReplaceProblemDetailsFactory":::
+
+### Use `ApiBehaviorOptions.ClientErrorMapping`
+
+Use the <xref:Microsoft.AspNetCore.Mvc.ApiBehaviorOptions.ClientErrorMapping%2A> property to configure the contents of the `ProblemDetails` response. For example, the following code in `Program.cs` updates the <xref:Microsoft.AspNetCore.Mvc.ClientErrorData.Link%2A> property for 404 responses:
+
+:::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Snippets/Program.cs" id="snippet_ClientErrorMapping":::
+
+## Additional resources
+
+* [How to Use ModelState Validation in ASP.NET Core Web API](https://code-maze.com/aspnetcore-modelstate-validation-web-api/)
+* [View or download sample code](https://github.com/dotnet/AspNetCore.Docs.Samples/tree/main/fundamentals/middleware/problem-details-service)
+* [Hellang.Middleware.ProblemDetails](https://www.nuget.org/packages/Hellang.Middleware.ProblemDetails/)
+
+:::moniker-end
+
+:::moniker range="= aspnetcore-6.0"
 
 This article describes how to handle errors and customize error handling with ASP.NET Core web APIs.
 
@@ -78,7 +287,7 @@ To request an HTML-formatted response, set the `Accept` HTTP request header to `
 
 In non-development environments, use [Exception Handling Middleware](xref:fundamentals/error-handling) to produce an error payload:
 
-1. In *Program.cs*, call <xref:Microsoft.AspNetCore.Builder.ExceptionHandlerExtensions.UseExceptionHandler%2A> to add the Exception Handling Middleware:
+1. In `Program.cs`, call <xref:Microsoft.AspNetCore.Builder.ExceptionHandlerExtensions.UseExceptionHandler%2A> to add the Exception Handling Middleware:
 
     :::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Program.cs" id="snippet_Middleware" highlight="7":::
 
@@ -91,7 +300,7 @@ The preceding `HandleError` action sends an [RFC 7807](https://tools.ietf.org/ht
 > [!WARNING]
 > Don't mark the error handler action method with HTTP method attributes, such as `HttpGet`. Explicit verbs prevent some requests from reaching the action method.
 >
-> For web APIs that use [Swagger / OpenAPI](xref:tutorials/web-api-help-pages-using-swagger), mark the error handler action with the [[ApiExplorerSettings]](<xref:Microsoft.AspNetCore.Mvc.ApiExplorerSettingsAttribute>) attribute and set its <xref:Microsoft.AspNetCore.Mvc.ApiExplorerSettingsAttribute.IgnoreApi%2A> property to `true`. This attribute configuration excludes the error handler action from the app's OpenAPI specification:
+> For web APIs that use [Swagger / OpenAPI](xref:tutorials/web-api-help-pages-using-swagger), mark the error handler action with the [[ApiExplorerSettings]](xref:Microsoft.AspNetCore.Mvc.ApiExplorerSettingsAttribute) attribute and set its <xref:Microsoft.AspNetCore.Mvc.ApiExplorerSettingsAttribute.IgnoreApi%2A> property to `true`. This attribute configuration excludes the error handler action from the app's OpenAPI specification:
 >
 > ```csharp
 > [ApiExplorerSettings(IgnoreApi = true)]
@@ -101,7 +310,7 @@ The preceding `HandleError` action sends an [RFC 7807](https://tools.ietf.org/ht
 
 Exception Handling Middleware can also be used in the Development environment to produce a consistent payload format across all environments:
 
-1. In *Program.cs*, register environment-specific Exception Handling Middleware instances:
+1. In `Program.cs`, register environment-specific Exception Handling Middleware instances:
 
     :::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Snippets/Program.cs" id="snippet_ConsistentEnvironments":::
 
@@ -129,24 +338,24 @@ The contents of the response can be modified from outside of the controller usin
 
     The preceding filter specifies an `Order` of the maximum integer value minus 10. This `Order` allows other filters to run at the end of the pipeline.
 
-1. In *Program.cs*, add the action filter to the filters collection:
+1. In `Program.cs`, add the action filter to the filters collection:
 
     :::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Snippets/Program.cs" id="snippet_AddHttpResponseExceptionFilter":::
 
 ## Validation failure error response
 
-For web API controllers, MVC responds with a <xref:Microsoft.AspNetCore.Mvc.ValidationProblemDetails> response type when model validation fails. MVC uses the results of <xref:Microsoft.AspNetCore.Mvc.ApiBehaviorOptions.InvalidModelStateResponseFactory> to construct the error response for a validation failure. The following example replaces the default factory with an implementation that also supports formatting responses as XML, in *Program.cs*:
+For web API controllers, MVC responds with a <xref:Microsoft.AspNetCore.Mvc.ValidationProblemDetails> response type when model validation fails. MVC uses the results of <xref:Microsoft.AspNetCore.Mvc.ApiBehaviorOptions.InvalidModelStateResponseFactory> to construct the error response for a validation failure. The following example replaces the default factory with an implementation that also supports formatting responses as XML, in `Program.cs`:
 
 :::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Snippets/Program.cs" id="snippet_ConfigureInvalidModelStateResponseFactory":::
 
 ## Client error response
 
-An *error result* is defined as a result with an HTTP status code of 400 or higher. For web API controllers, MVC transforms an error result to a produce a <xref:Microsoft.AspNetCore.Mvc.ProblemDetails>.
+An *error result* is defined as a result with an HTTP status code of 400 or higher. For web API controllers, MVC transforms an error result to produce a <xref:Microsoft.AspNetCore.Mvc.ProblemDetails>.
 
 The error response can be configured in one of the following ways:
 
 1. [Implement ProblemDetailsFactory](#implement-problemdetailsfactory)
-1. [Use ApiBehaviorOptions.ClientErrorMapping](#use-apibehavioroptionsclienterrormapping)
+1. Use [ApiBehaviorOptions.ClientErrorMapping](#use-apibehavioroptionsclienterrormapping)
 
 ### Implement `ProblemDetailsFactory`
 
@@ -156,13 +365,13 @@ MVC uses <xref:Microsoft.AspNetCore.Mvc.Infrastructure.ProblemDetailsFactory?dis
 * Validation failure error responses
 * <xref:Microsoft.AspNetCore.Mvc.ControllerBase.Problem%2A?displayProperty=nameWithType> and <xref:Microsoft.AspNetCore.Mvc.ControllerBase.ValidationProblem%2A?displayProperty=nameWithType>
 
-To customize the problem details response, register a custom implementation of <xref:Microsoft.AspNetCore.Mvc.Infrastructure.ProblemDetailsFactory> in *Program.cs*:
+To customize the problem details response, register a custom implementation of <xref:Microsoft.AspNetCore.Mvc.Infrastructure.ProblemDetailsFactory> in `Program.cs`:
 
 :::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Snippets/Program.cs" id="snippet_ReplaceProblemDetailsFactory":::
 
 ### Use `ApiBehaviorOptions.ClientErrorMapping`
 
-Use the <xref:Microsoft.AspNetCore.Mvc.ApiBehaviorOptions.ClientErrorMapping%2A> property to configure the contents of the `ProblemDetails` response. For example, the following code in *Program.cs* updates the <xref:Microsoft.AspNetCore.Mvc.ClientErrorData.Link%2A> property for 404 responses:
+Use the <xref:Microsoft.AspNetCore.Mvc.ApiBehaviorOptions.ClientErrorMapping%2A> property to configure the contents of the `ProblemDetails` response. For example, the following code in `Program.cs` updates the <xref:Microsoft.AspNetCore.Mvc.ClientErrorData.Link%2A> property for 404 responses:
 
 :::code language="csharp" source="handle-errors/samples/6.x/HandleErrorsSample/Snippets/Program.cs" id="snippet_ClientErrorMapping":::
 
@@ -176,6 +385,7 @@ ASP.NET Core doesn't produce a standardized error payload when an unhandled exce
 
 ## Additional resources
 
+* [How to Use ModelState Validation in ASP.NET Core Web API](https://code-maze.com/aspnetcore-modelstate-validation-web-api/)
 * [View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/web-api/handle-errors/samples) ([How to download](xref:index#how-to-download-a-sample))
 
 :::moniker-end
@@ -262,9 +472,7 @@ Date: Fri, 27 Sep 2019 16:55:37 GMT
 }
 ```
 
-The HTML-formatted response becomes useful when testing via tools like Postman. The following screen capture shows both the plain-text and the HTML-formatted responses in Postman:
-
-:::image source="handle-errors/_static/developer-exception-page-postman.gif" alt-text="Test the Developer Exception Page in Postman.":::
+The HTML-formatted response becomes useful when testing via tools like curl.
 
 > [!WARNING]
 > Enable the Developer Exception Page **only when the app is running in the Development environment**. Don't share detailed exception information publicly when the app runs in production. For more information on configuring environments, see <xref:fundamentals/environments>.
@@ -354,7 +562,7 @@ MVC uses <xref:Microsoft.AspNetCore.Mvc.Infrastructure.ProblemDetailsFactory?dis
 
 * Client error responses
 * Validation failure error responses
-* <xref:Microsoft.AspNetCore.Mvc.ControllerBase.Problem%2A?displayProperty=nameWithType> and <xref:Microsoft.AspNetCore.Mvc.ControllerBase.ValidationProblem%2A?displayProperty=nameWithType> >
+* <xref:Microsoft.AspNetCore.Mvc.ControllerBase.Problem%2A?displayProperty=nameWithType> and <xref:Microsoft.AspNetCore.Mvc.ControllerBase.ValidationProblem%2A?displayProperty=nameWithType>
 
 To customize the problem details response, register a custom implementation of <xref:Microsoft.AspNetCore.Mvc.Infrastructure.ProblemDetailsFactory> in `Startup.ConfigureServices`:
 
