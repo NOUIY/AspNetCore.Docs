@@ -1,15 +1,16 @@
 ---
 title: IIS modules with ASP.NET Core
-author: rick-anderson
+author: wadepickett
 description: Discover active and inactive IIS modules for ASP.NET Core apps and how to manage IIS modules.
 monikerRange: '>= aspnetcore-2.1'
-ms.author: riande
+ms.author: wpickett
 ms.custom: mvc
 ms.date: 01/13/2020
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: host-and-deploy/iis/modules
 ---
 # IIS modules with ASP.NET Core
+
+[!INCLUDE[](~/includes/not-latest-version.md)]
 
 Some of the native IIS modules and all of the IIS managed modules aren't able to process requests for ASP.NET Core apps. In many cases, ASP.NET Core offers an alternative to the scenarios addressed by IIS native and managed modules.
 
@@ -50,6 +51,7 @@ The table indicates native IIS modules that are functional with ASP.NET Core app
 | **Token Caching**<br>`TokenCacheModule`                                                          | Yes | |
 | **URI Caching**<br>`UriCacheModule`                                                              | Yes | |
 | **URL Authorization**<br>`UrlAuthorizationModule`                                                | Yes | [ASP.NET Core Identity](xref:security/authentication/identity) |
+| **WebDav**<br>`WebDAV`                                                                           | No  | |
 | **Windows Authentication**<br>`WindowsAuthenticationModule`                                      | Yes | |
 
 &#8224;The URL Rewrite Module's `isFile` and `isDirectory` match types don't work with ASP.NET Core apps due to the changes in [directory structure](xref:host-and-deploy/directory-structure).
