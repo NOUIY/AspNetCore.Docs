@@ -1,11 +1,10 @@
 ---
 title: Views in ASP.NET Core MVC
-author: rick-anderson
+author: tdykstra
 description: Learn how views handle the app's data presentation and user interaction in ASP.NET Core MVC.
 monikerRange: '>= aspnetcore-3.1'
-ms.author: riande
+ms.author: tdykstra
 ms.date: 12/05/2019
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: mvc/views/overview
 ---
 # Views in ASP.NET Core MVC
@@ -387,10 +386,10 @@ Generating custom HTML markup can be achieved with many built-in HTML Helpers. M
 
 Like many other aspects of ASP.NET Core, views support [dependency injection](xref:fundamentals/dependency-injection), allowing services to be [injected into views](xref:mvc/views/dependency-injection).
 
-::: moniker range=">= aspnetcore-6.0"
+:::moniker range=">= aspnetcore-6.0"
 
 ## CSS isolation
 
 [!INCLUDE[](~/includes/css-isolation.md)]
 
-::: moniker-end
+:::moniker-end
