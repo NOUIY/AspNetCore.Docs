@@ -1,23 +1,24 @@
 ---
 title: Use hosting startup assemblies in ASP.NET Core
-author: rick-anderson
+author: tdykstra
 description: Discover how to enhance an ASP.NET Core app from an external assembly using an IHostingStartup implementation.
 monikerRange: '>= aspnetcore-2.1'
-ms.author: riande
-ms.custom: "mvc, seodec18"
-ms.date: 09/26/2019
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.author: tdykstra
+ms.custom: mvc
+ms.date: 09/04/2025
 uid: fundamentals/configuration/platform-specific-configuration
 ---
 # Use hosting startup assemblies in ASP.NET Core
 
+[!INCLUDE[](~/includes/not-latest-version.md)]
+
 By [Pavel Krymets](https://github.com/pakrym)
 
-::: moniker range=">= aspnetcore-3.0"
+:::moniker range=">= aspnetcore-3.0"
 
 An <xref:Microsoft.AspNetCore.Hosting.IHostingStartup> (hosting startup) implementation adds enhancements to an app at startup from an external assembly. For example, an external library can use a hosting startup implementation to provide additional configuration providers or services to an app.
 
-[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/host/platform-specific-configuration/samples/) ([how to download](xref:index#how-to-download-a-sample))
+[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/host/platform-specific-configuration/samples/) ([how to download](xref:fundamentals/index#how-to-download-a-sample))
 
 ## HostingStartup attribute
 
@@ -98,13 +99,13 @@ The [sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore
 
 The `ServiceKeyInjection` class's <xref:Microsoft.AspNetCore.Hosting.IHostingStartup.Configure*> method uses an <xref:Microsoft.AspNetCore.Hosting.IWebHostBuilder> to add enhancements to an app.
 
-*HostingStartupLibrary/ServiceKeyInjection.cs*:
+`HostingStartupLibrary/ServiceKeyInjection.cs`:
 
 [!code-csharp[](platform-specific-configuration/samples/3.x/HostingStartupLibrary/ServiceKeyInjection.cs?name=snippet1)]
 
 The app's Index page reads and renders the configuration values for the two keys set by the class library's hosting startup assembly:
 
-*HostingStartupApp/Pages/Index.cshtml.cs*:
+`HostingStartupApp/Pages/Index.cshtml.cs`:
 
 [!code-csharp[](platform-specific-configuration/samples/3.x/HostingStartupApp/Pages/Index.cshtml.cs?name=snippet1&highlight=5-6,11-12)]
 
@@ -113,19 +114,19 @@ The [sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore
 * Contains a hosting startup class, `ServiceKeyInjection`, which implements `IHostingStartup`. `ServiceKeyInjection` adds a pair of service strings to the app's configuration.
 * Includes a `HostingStartup` attribute.
 
-*HostingStartupPackage/ServiceKeyInjection.cs*:
+`HostingStartupPackage/ServiceKeyInjection.cs`:
 
 [!code-csharp[](platform-specific-configuration/samples/3.x/HostingStartupPackage/ServiceKeyInjection.cs?name=snippet1)]
 
 The app's Index page reads and renders the configuration values for the two keys set by the package's hosting startup assembly:
 
-*HostingStartupApp/Pages/Index.cshtml.cs*:
+`HostingStartupApp/Pages/Index.cshtml.cs`:
 
 [!code-csharp[](platform-specific-configuration/samples/3.x/HostingStartupApp/Pages/Index.cshtml.cs?name=snippet1&highlight=7-8,13-14)]
 
 ### Console app without an entry point
 
-*This approach is only available for .NET Core apps, not .NET Framework.*
+*This approach is only available for .NET apps, not .NET Framework.*
 
 A dynamic hosting startup enhancement that doesn't require a compile-time reference for activation can be provided in a console app without an entry point that contains a `HostingStartup` attribute. Publishing the console app produces a hosting startup assembly that can be consumed from the runtime store.
 
@@ -155,7 +156,7 @@ A class implements `IHostingStartup`. The class's <xref:Microsoft.AspNetCore.Hos
 
 [!code-csharp[](platform-specific-configuration/samples-snapshot/3.x/StartupEnhancement.cs?name=snippet2&highlight=3,5)]
 
-When building an `IHostingStartup` project, the dependencies file (*.deps.json*) sets the `runtime` location of the assembly to the *bin* folder:
+When building an `IHostingStartup` project, the dependencies file (`.deps.json`) sets the `runtime` location of the assembly to the *bin* folder:
 
 [!code-json[](platform-specific-configuration/samples-snapshot/3.x/StartupEnhancement1.deps.json?range=2-13&highlight=8)]
 
@@ -262,13 +263,13 @@ For the runtime to discover the runtime store, the runtime store's location is a
 
 To activate the enhancement without a package reference to the enhancement, specify additional dependencies to the runtime with `additionalDeps`. `additionalDeps` allows you to:
 
-* Extend the app's library graph by providing a set of additional *.deps.json* files to merge with the app's own *.deps.json* file on startup.
+* Extend the app's library graph by providing a set of additional `.deps.json` files to merge with the app's own `.deps.json` file on startup.
 * Make the hosting startup assembly discoverable and loadable.
 
 The recommended approach for generating the additional dependencies file is to:
 
  1. Execute `dotnet publish` on the runtime store manifest file referenced in the previous section.
- 1. Remove the manifest reference from libraries and the `runtime` section of the resulting *.deps.json* file.
+ 1. Remove the manifest reference from libraries and the `runtime` section of the resulting `.deps.json` file.
 
 In the example project, the `store.manifest/1.0.0` property is removed from the `targets` and `libraries` section:
 
@@ -316,7 +317,7 @@ In the example project, the `store.manifest/1.0.0` property is removed from the 
 }
 ```
 
-Place the *.deps.json* file into the following location:
+Place the `.deps.json` file into the following location:
 
 ```
 {ADDITIONAL DEPENDENCIES PATH}/shared/{SHARED FRAMEWORK NAME}/{SHARED FRAMEWORK VERSION}/{ENHANCEMENT ASSEMBLY NAME}.deps.json
@@ -335,6 +336,9 @@ deployment/additionalDeps/shared/Microsoft.AspNetCore.App/3.0.0/StartupDiagnosti
 
 For runtime to discover the runtime store location, the additional dependencies file location is added to the `DOTNET_ADDITIONAL_DEPS` environment variable.
 
+> [!NOTE]
+> The `DOTNET_ADDITIONAL_DEPS` environment variable only works with framework-dependent applications. This environment variable is ignored for self-contained applications.
+
 In the sample app (*RuntimeStore* project), building the runtime store and generating the additional dependencies file is accomplished using a [PowerShell](/powershell/scripting/overview) script.
 
 For examples of how to set environment variables for various operating systems, see [Use multiple environments](xref:fundamentals/environments).
@@ -351,7 +355,7 @@ To facilitate the deployment of a hosting startup in a multimachine environment,
 
 A hosting startup enhancement can be provided in a NuGet package. The package has a `HostingStartup` attribute. The hosting startup types provided by the package are made available to the app using either of the following approaches:
 
-* The enhanced app's project file makes a package reference for the hosting startup in the app's project file (a compile-time reference). With the compile-time reference in place, the hosting startup assembly and all of its dependencies are incorporated into the app's dependency file (*.deps.json*). This approach applies to a hosting startup assembly package published to [nuget.org](https://www.nuget.org/).
+* The enhanced app's project file makes a package reference for the hosting startup in the app's project file (a compile-time reference). With the compile-time reference in place, the hosting startup assembly and all of its dependencies are incorporated into the app's dependency file (`.deps.json`). This approach applies to a hosting startup assembly package published to [nuget.org](https://www.nuget.org/).
 * The hosting startup's dependencies file is made available to the enhanced app as described in the [Runtime store](#runtime-store) section (without a compile-time reference).
 
 For more information on NuGet packages and the runtime store, see the following topics:
@@ -364,7 +368,7 @@ For more information on NuGet packages and the runtime store, see the following 
 
 A hosting startup enhancement can be provided by a *bin*-deployed assembly in the enhanced app. The hosting startup types provided by the assembly are made available to the app using one of the following approaches:
 
-* The enhanced app's project file makes an assembly reference to the hosting startup (a compile-time reference). With the compile-time reference in place, the hosting startup assembly and all of its dependencies are incorporated into the app's dependency file (*.deps.json*). This approach applies when the deployment scenario calls for making a compile-time reference to the hosting startup's assembly (*.dll* file) and moving the assembly to either:
+* The enhanced app's project file makes an assembly reference to the hosting startup (a compile-time reference). With the compile-time reference in place, the hosting startup assembly and all of its dependencies are incorporated into the app's dependency file (`.deps.json`). This approach applies when the deployment scenario calls for making a compile-time reference to the hosting startup's assembly (*.dll* file) and moving the assembly to either:
   * The consuming project.
   * A location accessible by the consuming project.
 * The hosting startup's dependencies file is made available to the enhanced app as described in the [Runtime store](#runtime-store) section (without a compile-time reference).
@@ -374,7 +378,7 @@ A hosting startup enhancement can be provided by a *bin*-deployed assembly in th
 
 ## Sample code
 
-The [sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/host/platform-specific-configuration/samples/) ([how to download](xref:index#how-to-download-a-sample)) demonstrates hosting startup implementation scenarios:
+The [sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/host/platform-specific-configuration/samples/) ([how to download](xref:fundamentals/index#how-to-download-a-sample)) demonstrates hosting startup implementation scenarios:
 
 * Two hosting startup assemblies (class libraries) set a pair of in-memory configuration key-value pairs each:
   * NuGet package (*HostingStartupPackage*)
@@ -428,11 +432,11 @@ dotnet nuget locals all --clear
 
 **Activation from a runtime store-deployed assembly**
 
-1. The *StartupDiagnostics* project uses [PowerShell](/powershell/scripting/overview) to modify its *StartupDiagnostics.deps.json* file. PowerShell is installed by default on Windows starting with Windows 7 SP1 and Windows Server 2008 R2 SP1. To obtain PowerShell on other platforms, see [Installing various versions of PowerShell](/powershell/scripting/install/installing-powershell).
+1. The *StartupDiagnostics* project uses [PowerShell](/powershell/scripting/overview) to modify its `StartupDiagnostics.deps.json` file. PowerShell is installed by default on Windows starting with Windows 7 SP1 and Windows Server 2008 R2 SP1. To obtain PowerShell on other platforms, see [Installing various versions of PowerShell](/powershell/scripting/install/installing-powershell).
 1. Execute the *build.ps1* script in the *RuntimeStore* folder. The script:
    * Generates the `StartupDiagnostics` package in the *obj\packages* folder.
    * Generates the runtime store for `StartupDiagnostics` in the *store* folder. The `dotnet store` command in the script uses the `win7-x64` [runtime identifier (RID)](/dotnet/core/rid-catalog) for a hosting startup deployed to Windows. When providing the hosting startup for a different runtime, substitute the correct RID on line 37 of the script. The runtime store for `StartupDiagnostics` would later be moved to the user's or system's runtime store on the machine where the assembly will be consumed. The user runtime store install location for the `StartupDiagnostics` assembly is *.dotnet/store/x64/netcoreapp3.0/startupdiagnostics/1.0.0/lib/netcoreapp3.0/StartupDiagnostics.dll*.
-   * Generates the `additionalDeps` for `StartupDiagnostics` in the *additionalDeps* folder. The additional dependencies would later be moved to the user's or system's additional dependencies. The user `StartupDiagnostics` additional dependencies install location is *.dotnet/x64/additionalDeps/StartupDiagnostics/shared/Microsoft.NETCore.App/3.0.0/StartupDiagnostics.deps.json*.
+   * Generates the `additionalDeps` for `StartupDiagnostics` in the *additionalDeps* folder. The additional dependencies would later be moved to the user's or system's additional dependencies. The user `StartupDiagnostics` additional dependencies install location is `.dotnet/x64/additionalDeps/StartupDiagnostics/shared/Microsoft.NETCore.App/3.0.0/StartupDiagnostics.deps.json`.
    * Places the *deploy.ps1* file in the *deployment* folder.
 1. Run the *deploy.ps1* script in the *deployment* folder. The script appends:
    * `StartupDiagnostics` to the `ASPNETCORE_HOSTINGSTARTUPASSEMBLIES` environment variable.
@@ -441,13 +445,13 @@ dotnet nuget locals all --clear
 1. Run the sample app.
 1. Request the `/services` endpoint to see the app's registered services. Request the `/diag` endpoint to see the diagnostic information.
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range="< aspnetcore-3.0"
+:::moniker range="< aspnetcore-3.0"
 
 An <xref:Microsoft.AspNetCore.Hosting.IHostingStartup> (hosting startup) implementation adds enhancements to an app at startup from an external assembly. For example, an external library can use a hosting startup implementation to provide additional configuration providers or services to an app.
 
-[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/host/platform-specific-configuration/samples/) ([how to download](xref:index#how-to-download-a-sample))
+[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/host/platform-specific-configuration/samples/) ([how to download](xref:fundamentals/index#how-to-download-a-sample))
 
 ## HostingStartup attribute
 
@@ -498,13 +502,13 @@ The [sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore
 
 The `ServiceKeyInjection` class's <xref:Microsoft.AspNetCore.Hosting.IHostingStartup.Configure*> method uses an <xref:Microsoft.AspNetCore.Hosting.IWebHostBuilder> to add enhancements to an app.
 
-*HostingStartupLibrary/ServiceKeyInjection.cs*:
+`HostingStartupLibrary/ServiceKeyInjection.cs`:
 
 [!code-csharp[](platform-specific-configuration/samples/2.x/HostingStartupLibrary/ServiceKeyInjection.cs?name=snippet1)]
 
 The app's Index page reads and renders the configuration values for the two keys set by the class library's hosting startup assembly:
 
-*HostingStartupApp/Pages/Index.cshtml.cs*:
+`HostingStartupApp/Pages/Index.cshtml.cs`:
 
 [!code-csharp[](platform-specific-configuration/samples/2.x/HostingStartupApp/Pages/Index.cshtml.cs?name=snippet1&highlight=5-6,11-12)]
 
@@ -513,19 +517,19 @@ The [sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore
 * Contains a hosting startup class, `ServiceKeyInjection`, which implements `IHostingStartup`. `ServiceKeyInjection` adds a pair of service strings to the app's configuration.
 * Includes a `HostingStartup` attribute.
 
-*HostingStartupPackage/ServiceKeyInjection.cs*:
+`HostingStartupPackage/ServiceKeyInjection.cs`:
 
 [!code-csharp[](platform-specific-configuration/samples/2.x/HostingStartupPackage/ServiceKeyInjection.cs?name=snippet1)]
 
 The app's Index page reads and renders the configuration values for the two keys set by the package's hosting startup assembly:
 
-*HostingStartupApp/Pages/Index.cshtml.cs*:
+`HostingStartupApp/Pages/Index.cshtml.cs`:
 
 [!code-csharp[](platform-specific-configuration/samples/2.x/HostingStartupApp/Pages/Index.cshtml.cs?name=snippet1&highlight=7-8,13-14)]
 
 ### Console app without an entry point
 
-*This approach is only available for .NET Core apps, not .NET Framework.*
+*This approach is only available for .NET apps, not .NET Framework.*
 
 A dynamic hosting startup enhancement that doesn't require a compile-time reference for activation can be provided in a console app without an entry point that contains a `HostingStartup` attribute. Publishing the console app produces a hosting startup assembly that can be consumed from the runtime store.
 
@@ -555,7 +559,7 @@ A class implements `IHostingStartup`. The class's <xref:Microsoft.AspNetCore.Hos
 
 [!code-csharp[](platform-specific-configuration/samples-snapshot/2.x/StartupEnhancement.cs?name=snippet2&highlight=3,5)]
 
-When building an `IHostingStartup` project, the dependencies file (*.deps.json*) sets the `runtime` location of the assembly to the *bin* folder:
+When building an `IHostingStartup` project, the dependencies file (`.deps.json`) sets the `runtime` location of the assembly to the *bin* folder:
 
 [!code-json[](platform-specific-configuration/samples-snapshot/2.x/StartupEnhancement1.deps.json?range=2-13&highlight=8)]
 
@@ -648,13 +652,13 @@ For the runtime to discover the runtime store, the runtime store's location is a
 
 To activate the enhancement without a package reference to the enhancement, specify additional dependencies to the runtime with `additionalDeps`. `additionalDeps` allows you to:
 
-* Extend the app's library graph by providing a set of additional *.deps.json* files to merge with the app's own *.deps.json* file on startup.
+* Extend the app's library graph by providing a set of additional `.deps.json` files to merge with the app's own `.deps.json` file on startup.
 * Make the hosting startup assembly discoverable and loadable.
 
 The recommended approach for generating the additional dependencies file is to:
 
  1. Execute `dotnet publish` on the runtime store manifest file referenced in the previous section.
- 1. Remove the manifest reference from libraries and the `runtime` section of the resulting *.deps.json* file.
+ 1. Remove the manifest reference from libraries and the `runtime` section of the resulting `.deps.json` file.
 
 In the example project, the `store.manifest/1.0.0` property is removed from the `targets` and `libraries` section:
 
@@ -702,7 +706,7 @@ In the example project, the `store.manifest/1.0.0` property is removed from the 
 }
 ```
 
-Place the *.deps.json* file into the following location:
+Place the `.deps.json` file into the following location:
 
 ```
 {ADDITIONAL DEPENDENCIES PATH}/shared/{SHARED FRAMEWORK NAME}/{SHARED FRAMEWORK VERSION}/{ENHANCEMENT ASSEMBLY NAME}.deps.json
@@ -721,6 +725,9 @@ deployment/additionalDeps/shared/Microsoft.AspNetCore.App/2.1.0/StartupDiagnosti
 
 For runtime to discover the runtime store location, the additional dependencies file location is added to the `DOTNET_ADDITIONAL_DEPS` environment variable.
 
+> [!NOTE]
+> The `DOTNET_ADDITIONAL_DEPS` environment variable only works with framework-dependent applications. This environment variable is ignored for self-contained applications.
+
 In the sample app (*RuntimeStore* project), building the runtime store and generating the additional dependencies file is accomplished using a [PowerShell](/powershell/scripting/overview) script.
 
 For examples of how to set environment variables for various operating systems, see [Use multiple environments](xref:fundamentals/environments).
@@ -737,7 +744,7 @@ To facilitate the deployment of a hosting startup in a multimachine environment,
 
 A hosting startup enhancement can be provided in a NuGet package. The package has a `HostingStartup` attribute. The hosting startup types provided by the package are made available to the app using either of the following approaches:
 
-* The enhanced app's project file makes a package reference for the hosting startup in the app's project file (a compile-time reference). With the compile-time reference in place, the hosting startup assembly and all of its dependencies are incorporated into the app's dependency file (*.deps.json*). This approach applies to a hosting startup assembly package published to [nuget.org](https://www.nuget.org/).
+* The enhanced app's project file makes a package reference for the hosting startup in the app's project file (a compile-time reference). With the compile-time reference in place, the hosting startup assembly and all of its dependencies are incorporated into the app's dependency file (`.deps.json`). This approach applies to a hosting startup assembly package published to [nuget.org](https://www.nuget.org/).
 * The hosting startup's dependencies file is made available to the enhanced app as described in the [Runtime store](#runtime-store) section (without a compile-time reference).
 
 For more information on NuGet packages and the runtime store, see the following topics:
@@ -750,7 +757,7 @@ For more information on NuGet packages and the runtime store, see the following 
 
 A hosting startup enhancement can be provided by a *bin*-deployed assembly in the enhanced app. The hosting startup types provided by the assembly are made available to the app using one of the following approaches:
 
-* The enhanced app's project file makes an assembly reference to the hosting startup (a compile-time reference). With the compile-time reference in place, the hosting startup assembly and all of its dependencies are incorporated into the app's dependency file (*.deps.json*). This approach applies when the deployment scenario calls for making a compile-time reference to the hosting startup's assembly (*.dll* file) and moving the assembly to either:
+* The enhanced app's project file makes an assembly reference to the hosting startup (a compile-time reference). With the compile-time reference in place, the hosting startup assembly and all of its dependencies are incorporated into the app's dependency file (`.deps.json`). This approach applies when the deployment scenario calls for making a compile-time reference to the hosting startup's assembly (*.dll* file) and moving the assembly to either:
   * The consuming project.
   * A location accessible by the consuming project.
 * The hosting startup's dependencies file is made available to the enhanced app as described in the [Runtime store](#runtime-store) section (without a compile-time reference).
@@ -760,7 +767,7 @@ A hosting startup enhancement can be provided by a *bin*-deployed assembly in th
 
 ## Sample code
 
-The [sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/host/platform-specific-configuration/samples/) ([how to download](xref:index#how-to-download-a-sample)) demonstrates hosting startup implementation scenarios:
+The [sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/host/platform-specific-configuration/samples/) ([how to download](xref:fundamentals/index#how-to-download-a-sample)) demonstrates hosting startup implementation scenarios:
 
 * Two hosting startup assemblies (class libraries) set a pair of in-memory configuration key-value pairs each:
   * NuGet package (*HostingStartupPackage*)
@@ -814,11 +821,11 @@ dotnet nuget locals all --clear
 
 **Activation from a runtime store-deployed assembly**
 
-1. The *StartupDiagnostics* project uses [PowerShell](/powershell/scripting/overview) to modify its *StartupDiagnostics.deps.json* file. PowerShell is installed by default on Windows starting with Windows 7 SP1 and Windows Server 2008 R2 SP1. To obtain PowerShell on other platforms, see [Installing various versions of PowerShell](/powershell/scripting/install/installing-powershell).
+1. The *StartupDiagnostics* project uses [PowerShell](/powershell/scripting/overview) to modify its `StartupDiagnostics.deps.json` file. PowerShell is installed by default on Windows starting with Windows 7 SP1 and Windows Server 2008 R2 SP1. To obtain PowerShell on other platforms, see [Installing various versions of PowerShell](/powershell/scripting/install/installing-powershell).
 1. Execute the *build.ps1* script in the *RuntimeStore* folder. The script:
    * Generates the `StartupDiagnostics` package in the *obj\packages* folder.
    * Generates the runtime store for `StartupDiagnostics` in the *store* folder. The `dotnet store` command in the script uses the `win7-x64` [runtime identifier (RID)](/dotnet/core/rid-catalog) for a hosting startup deployed to Windows. When providing the hosting startup for a different runtime, substitute the correct RID on line 37 of the script. The runtime store for `StartupDiagnostics` would later be moved to the user's or system's runtime store on the machine where the assembly will be consumed. The user runtime store install location for the `StartupDiagnostics` assembly is *.dotnet/store/x64/netcoreapp2.2/startupdiagnostics/1.0.0/lib/netcoreapp2.2/StartupDiagnostics.dll*.
-   * Generates the `additionalDeps` for `StartupDiagnostics` in the *additionalDeps* folder. The additional dependencies would later be moved to the user's or system's additional dependencies. The user `StartupDiagnostics` additional dependencies install location is *.dotnet/x64/additionalDeps/StartupDiagnostics/shared/Microsoft.NETCore.App/2.2.0/StartupDiagnostics.deps.json*.
+   * Generates the `additionalDeps` for `StartupDiagnostics` in the *additionalDeps* folder. The additional dependencies would later be moved to the user's or system's additional dependencies. The user `StartupDiagnostics` additional dependencies install location is `.dotnet/x64/additionalDeps/StartupDiagnostics/shared/Microsoft.NETCore.App/2.2.0/StartupDiagnostics.deps.json`.
    * Places the *deploy.ps1* file in the *deployment* folder.
 1. Run the *deploy.ps1* script in the *deployment* folder. The script appends:
    * `StartupDiagnostics` to the `ASPNETCORE_HOSTINGSTARTUPASSEMBLIES` environment variable.
@@ -827,4 +834,4 @@ dotnet nuget locals all --clear
 1. Run the sample app.
 1. Request the `/services` endpoint to see the app's registered services. Request the `/diag` endpoint to see the diagnostic information.
 
-::: moniker-end
+:::moniker-end
