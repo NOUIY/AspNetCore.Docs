@@ -1,0 +1,71 @@
+name: Issue processing
+on:
+  issues:
+    types:
+      - opened
+jobs:
+  process-blazor-issue:
+    if: (contains(github.event.issue.body, 'https://github.com/dotnet/AspNetCore.Docs/blob/main/aspnetcore/blazor') 
+      && !contains(github.event.issue.body, 'https://github.com/dotnet/AspNetCore.Docs/blob/main/aspnetcore/blazor/hybrid'))
+      || contains(github.event.issue.body, 'https://github.com/dotnet/AspNetCore.Docs/blob/main/aspnetcore/client-side/dotnet-interop/index.md')
+      || contains(github.event.issue.body, 'https://github.com/dotnet/AspNetCore.Docs/blob/main/aspnetcore/client-side/dotnet-interop/wasm-browser-app.md')
+      || contains(github.event.issue.body, 'https://github.com/dotnet/AspNetCore.Docs/blob/main/aspnetcore/client-side/dotnet-on-webworkers.md')
+      || contains(github.event.issue.body, 'https://github.com/dotnet/AspNetCore.Docs/blob/main/aspnetcore/mvc/views/tag-helpers/built-in/component-tag-helper.md')
+      || contains(github.event.issue.body, 'https://github.com/dotnet/AspNetCore.Docs/blob/main/aspnetcore/mvc/views/tag-helpers/built-in/persist-component-state.md')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `### 🦃 ***Happy Thanksgiving!*** 🍽️
+
+            This issue has been marked for triage on the Blazor Docs GitHub project, and I'll respond after the Thanksgiving holiday during the first week of December.
+
+            We only work on documentation on this repo. If you need product support, close this issue and seek assistance through one or more of the following support channels:
+
+            * [Stack Overflow (tagged: 'blazor')](https://stackoverflow.com/questions/tagged/blazor)
+            * [General ASP.NET Core Slack Team](https://aspnetcore.slack.com/join/shared_invite/zt-1mv5487zb-EOZxJ1iqb0A0ajowEbxByQ#/shared-invite/email)
+            * [Blazor Gitter](https://gitter.im/aspnet/Blazor)
+
+            If you think that you found a potential bug in the framework or have product feedback, close this issue and open a new issue for the ASP.NET Core product unit at [dotnet/aspnetcore issues](https://github.com/dotnet/aspnetcore/issues). Bug reports require a clear explanation of the problem, usually including a minimal repro project placed on GitHub for the product unit engineers to download and run. If you determine with the product unit that it isn't a bug but merely requires documentation, please re-open this docs issue and place a cross-link to your engineering issue discussion.
+
+            For problems or feedback on Visual Studio, close this issue and use the [**Report a Problem**](https://docs.microsoft.com/visualstudio/ide/how-to-report-a-problem-with-visual-studio) or [**Suggest a Feature**](https://docs.microsoft.com/visualstudio/ide/suggest-a-feature) processes from within VS, which open internal issues for the VS product unit. For more information, see [Visual Studio Feedback](https://developercommunity.visualstudio.com/home).
+
+            For problems with Visual Studio Code, close this issue and ask for support on community support forums. For bug reports and product feedback, open an issue on the [microsoft/vscode GitHub repo](https://github.com/microsoft/vscode/issues).`
+            })
+            await github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ["aspnet-core/svc"]
+            })
+            await github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ["blazor/subsvc"]
+            })
+            await github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ["Blazor"]
+            })
+            await github.rest.issues.addAssignees({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              assignees: ["guardrex"]
+            })
+            await github.rest.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: [":watch: Not Triaged"]
+            })
