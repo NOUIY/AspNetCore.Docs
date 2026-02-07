@@ -1,14 +1,15 @@
 ---
 title: "Tutorial: Create a Razor Pages web app with ASP.NET Core"
-author: rick-anderson
+author: wadepickett
 description: This series of tutorials explains the basics of building a Razor Pages web app. 
-ms.author: riande
-ms.date: 10/06/2021
-ms.custom: contperf-fy21q2
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.author: wpickett
+ms.date: 01/09/2026
+monikerRange: '>= aspnetcore-3.1'
 uid: tutorials/razor-pages/index
 ---
 # Tutorial: Create a Razor Pages web app with ASP.NET Core
+
+[!INCLUDE[](~/includes/not-latest-version.md)]
 
 This series of tutorials explains the basics of building a Razor Pages web app.
 
@@ -29,4 +30,6 @@ This series includes the following tutorials:
 
 At the end, you'll have an app that can display and manage a database of movies.
 
-![Sample page of sample app](index/_static/sample-page.png)
+:::image type="content" source="~/tutorials/razor-pages/search/media/search-string-ghost.png" alt-text="Sample page of sample app.":::
+
+:::image type="content" source="~/tutorials/razor-pages/validation/media/validation-errors.png" alt-text="Sample edit validation of sample app.":::
