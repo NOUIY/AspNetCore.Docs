@@ -1,11 +1,10 @@
 ---
 title: Part 5, Razor Pages with EF Core in ASP.NET Core - Data Model
-author: rick-anderson
+author: tdykstra
 description: Part 5 of Razor Pages and Entity Framework tutorial series.
-ms.author: riande
+ms.author: tdykstra
 ms.custom: mvc
-ms.date: 3/3/2021
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.date: 04/10/2025
 uid: data/ef-rp/complex-data-model
 ---
 
@@ -17,7 +16,7 @@ By [Tom Dykstra](https://github.com/tdykstra), [Jeremy Likness](https://twitter.
 
 [!INCLUDE [about the series](~/includes/RP-EF/intro.md)]
 
-::: moniker range=">= aspnetcore-5.0"
+:::moniker range=">= aspnetcore-5.0"
 
 The previous tutorials worked with a basic data model that was composed of three entities. In this tutorial:
 
@@ -45,7 +44,7 @@ In the preceding Dataedo diagram, the `CourseInstructor` is a join table created
 
 ## The Student entity
 
-Replace the code in *Models/Student.cs* with the following code:
+Replace the code in `Models/Student.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu30/Models/Student.cs)]
 
@@ -70,7 +69,7 @@ The preceding code adds a `FullName` property and adds the following attributes 
 
 For student enrollment dates, all of the pages currently display the time of day along with the date, although only the date is relevant. By using data annotation attributes, you can make one code change that will fix the display format in every page that shows the data. 
 
-The [DataType](/dotnet/api/system.componentmodel.dataannotations.datatypeattribute) attribute specifies a data type that's more specific than the database intrinsic type. In this case only the date should be displayed, not the date and time. The [DataType Enumeration](/dotnet/api/system.componentmodel.dataannotations.datatype) provides for many data types, such as Date, Time, PhoneNumber, Currency, EmailAddress, etc. The `DataType` attribute can also enable the app to automatically provide type-specific features. For example:
+The [DataType](xref:System.ComponentModel.DataAnnotations.DataTypeAttribute) attribute specifies a data type that's more specific than the database intrinsic type. In this case only the date should be displayed, not the date and time. The [DataType Enumeration](xref:System.ComponentModel.DataAnnotations.DataType) provides for many data types, such as Date, Time, PhoneNumber, Currency, EmailAddress, etc. The `DataType` attribute can also enable the app to automatically provide type-specific features. For example:
 
 * The `mailto:` link is automatically created for `DataType.EmailAddress`.
 * The date selector is provided for `DataType.Date` in most browsers.
@@ -100,11 +99,11 @@ For more information, see the [\<input> Tag Helper documentation](xref:mvc/views
 [StringLength(50, ErrorMessage = "First name cannot be longer than 50 characters.")]
 ```
 
-Data validation rules and validation error messages can be specified with attributes. The [StringLength](/dotnet/api/system.componentmodel.dataannotations.stringlengthattribute) attribute specifies the minimum and maximum length of characters that are allowed in a data field. The code shown limits names to no more than 50 characters. An example that sets the minimum string length is shown [later](#the-required-attribute).
+Data validation rules and validation error messages can be specified with attributes. The [StringLength](xref:System.ComponentModel.DataAnnotations.StringLengthAttribute) attribute specifies the minimum and maximum length of characters that are allowed in a data field. The code shown limits names to no more than 50 characters. An example that sets the minimum string length is shown [later](#the-required-attribute).
 
 The `StringLength` attribute also provides client-side and server-side validation. The minimum value has no impact on the database schema.
 
-The `StringLength` attribute doesn't prevent a user from entering white space for a name. The [RegularExpression](/dotnet/api/system.componentmodel.dataannotations.regularexpressionattribute) attribute can be used to apply restrictions to the input. For example, the following code requires the first character to be upper case and the remaining characters to be alphabetical:
+The `StringLength` attribute doesn't prevent a user from entering white space for a name. The [RegularExpression](xref:System.ComponentModel.DataAnnotations.RegularExpressionAttribute) attribute can be used to apply restrictions to the input. For example, the following code requires the first character to be upper case and the remaining characters to be alphabetical:
 
 ```csharp
 [RegularExpression(@"^[A-Z]+[a-zA-Z]*$")]
@@ -252,7 +251,7 @@ For this tutorial, the way to get past this error is to delete and re-create the
 <!-- no longer using PJT
 ![Instructor entity](complex-data-model/_static/instructor-entity.png) -->
 
-Create *Models/Instructor.cs* with the following code:
+Create `Models/Instructor.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu50/Models/Instructor.cs?name=snippet_BeforeInheritance)]
 
@@ -282,7 +281,7 @@ public OfficeAssignment OfficeAssignment { get; set; }
 
 ![OfficeAssignment entity](complex-data-model/_static/officeassignment-entity.png)
 
-Create *Models/OfficeAssignment.cs* with the following code:
+Create `Models/OfficeAssignment.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu30/Models/OfficeAssignment.cs)]
 
@@ -311,7 +310,7 @@ When an `Instructor` entity has a related `OfficeAssignment` entity, each entity
 
 ## The Course Entity
 
-Update *Models/Course.cs* with the following code:
+Update `Models/Course.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu50/Models/Course.cs?highlight=2,10,13,16,19,21,23)]
 
@@ -358,12 +357,12 @@ public ICollection<Enrollment> Enrollments { get; set; }
 A course may be taught by multiple instructors, so the `Instructors` navigation property is a collection:
 
 ```csharp
-        public ICollection<Instructor> Instructors { get; set; }
+public ICollection<Instructor> Instructors { get; set; }
 ```
 
 ## The Department entity
 
-Create *Models/Department.cs* with the following code:
+Create `Models/Department.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu50/Models/Department.cs?name=snippet1)]
 
@@ -418,7 +417,7 @@ An enrollment record is for one course taken by one student.
 
 ![Enrollment entity](complex-data-model/_static/enrollment-entity.png)
 
-Update *Models/Enrollment.cs* with the following code:
+Review `Models/Enrollment.cs`:
 
 [!code-csharp[](intro/samples/cu30/Models/Enrollment.cs?highlight=1-2,16)]
 
@@ -430,7 +429,7 @@ An enrollment record is for one course taken by one student.
 
 ![Enrollment entity](complex-data-model/_static/enrollment-entity.png) 
 
-Update *Models/Enrollment.cs* with the following code:
+Update `Models/Enrollment.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu50/Models/Enrollment.cs?highlight=1,15)]
 
@@ -469,7 +468,7 @@ The `Instructor` and `Course` entities have a many-to-many relationship using a 
 
 ![CourseAssignment entity](complex-data-model/_static/courseassignment-entity.png)
 
-Create *Models/CourseAssignment.cs* with the following code:
+Create `Models/CourseAssignment.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu30/Models/CourseAssignment.cs)]
 
@@ -501,7 +500,7 @@ The `Enrollment` join entity defines its own PK, so duplicates of this sort are 
 
 ## Update the database context
 
-Update *Data/SchoolContext.cs* with the following code:
+Update `Data/SchoolContext.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu50/Data/SchoolContext.cs?name=snippet_SS&highlight=15-17,21-28)]
 
@@ -554,7 +553,7 @@ The preceding diagram shows:
 
 ## Seed the database
 
-Update the code in *Data/DbInitializer.cs*:
+Update the code in `Data/DbInitializer.cs`:
 
 [!code-csharp[](intro/samples/cu50/Data/DbInitializer2.cs?name=snippet)]
 
@@ -604,6 +603,7 @@ The next section fixes this error.
 ---
 
 -->
+<a name="applyexisting"></a>
 
 ## Apply the migration or drop and re-create
 
@@ -633,7 +633,7 @@ To force EF Core to create a new database, drop and update the database:
 
 # [Visual Studio Code](#tab/visual-studio-code)
 
-  * Open a command window and navigate to the project folder. The project folder contains the *ContosoUniversity.csproj* file.
+  * Open a command window and navigate to the project folder. The project folder contains the `ContosoUniversity.csproj` file.
   * Delete the *Migrations* folder.
   * Run the following commands:
 
@@ -672,7 +672,7 @@ This section is optional. These steps work only for SQL Server LocalDB and only 
 
 When migrations are run with existing data, there may be FK constraints that are not satisfied with the existing data. With production data, steps must be taken to migrate the existing data. This section provides an example of fixing FK constraint violations. Don't make these code changes without a backup. Don't make these code changes if you completed the preceding [Drop and re-create the database](#drop) section.
 
-The *{timestamp}_ComplexDataModel.cs* file contains the following code:
+The `{timestamp}_ComplexDataModel.cs` file contains the following code:
 
 [!code-csharp[](intro/samples/cu30snapshots/5-complex/Migrations/ComplexDataModel.cs?name=snippet_DepartmentID)]
 
@@ -687,7 +687,7 @@ To make the `ComplexDataModel` migration work with existing data:
 
 In the `ComplexDataModel` migration class, update the `Up` method:
 
-* Open the *{timestamp}_ComplexDataModel.cs* file.
+* Open the `{timestamp}_ComplexDataModel.cs` file.
 * Comment out the line of code that adds the `DepartmentID` column to the `Course` table.
 
 [!code-csharp[](intro/samples/cu30snapshots/5-complex/Migrations/ComplexDataModel.cs?name=snippet_CommentOut&highlight=9-13)]
@@ -734,9 +734,9 @@ The next two tutorials show how to read and update related data.
 > [Previous tutorial](xref:data/ef-rp/migrations)
 > [Next tutorial](xref:data/ef-rp/read-related-data)
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range=">= aspnetcore-3.0 < aspnetcore-5.0"
+:::moniker range=">= aspnetcore-3.0 < aspnetcore-5.0"
 
 The previous tutorials worked with a basic data model that was composed of three entities. In this tutorial:
 
@@ -751,7 +751,7 @@ The completed data model is shown in the following illustration:
 
 ![Student entity](complex-data-model/_static/student-entity.png)
 
-Replace the code in *Models/Student.cs* with the following code:
+Replace the code in `Models/Student.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu30/Models/Student.cs)]
 
@@ -776,7 +776,7 @@ The preceding code adds a `FullName` property and adds the following attributes 
 
 For student enrollment dates, all of the pages currently display the time of day along with the date, although only the date is relevant. By using data annotation attributes, you can make one code change that will fix the display format in every page that shows the data. 
 
-The [DataType](/dotnet/api/system.componentmodel.dataannotations.datatypeattribute) attribute specifies a data type that's more specific than the database intrinsic type. In this case only the date should be displayed, not the date and time. The [DataType Enumeration](/dotnet/api/system.componentmodel.dataannotations.datatype) provides for many data types, such as Date, Time, PhoneNumber, Currency, EmailAddress, etc. The `DataType` attribute can also enable the app to automatically provide type-specific features. For example:
+The [DataType](xref:System.ComponentModel.DataAnnotations.DataTypeAttribute) attribute specifies a data type that's more specific than the database intrinsic type. In this case only the date should be displayed, not the date and time. The [DataType Enumeration](xref:System.ComponentModel.DataAnnotations.DataType) provides for many data types, such as Date, Time, PhoneNumber, Currency, EmailAddress, etc. The `DataType` attribute can also enable the app to automatically provide type-specific features. For example:
 
 * The `mailto:` link is automatically created for `DataType.EmailAddress`.
 * The date selector is provided for `DataType.Date` in most browsers.
@@ -806,11 +806,11 @@ For more information, see the [\<input> Tag Helper documentation](xref:mvc/views
 [StringLength(50, ErrorMessage = "First name cannot be longer than 50 characters.")]
 ```
 
-Data validation rules and validation error messages can be specified with attributes. The [StringLength](/dotnet/api/system.componentmodel.dataannotations.stringlengthattribute) attribute specifies the minimum and maximum length of characters that are allowed in a data field. The code shown limits names to no more than 50 characters. An example that sets the minimum string length is shown [later](#the-required-attribute).
+Data validation rules and validation error messages can be specified with attributes. The [StringLength](xref:System.ComponentModel.DataAnnotations.StringLengthAttribute) attribute specifies the minimum and maximum length of characters that are allowed in a data field. The code shown limits names to no more than 50 characters. An example that sets the minimum string length is shown [later](#the-required-attribute).
 
 The `StringLength` attribute also provides client-side and server-side validation. The minimum value has no impact on the database schema.
 
-The `StringLength` attribute doesn't prevent a user from entering white space for a name. The [RegularExpression](/dotnet/api/system.componentmodel.dataannotations.regularexpressionattribute) attribute can be used to apply restrictions to the input. For example, the following code requires the first character to be upper case and the remaining characters to be alphabetical:
+The `StringLength` attribute doesn't prevent a user from entering white space for a name. The [RegularExpression](xref:System.ComponentModel.DataAnnotations.RegularExpressionAttribute) attribute can be used to apply restrictions to the input. For example, the following code requires the first character to be upper case and the remaining characters to be alphabetical:
 
 ```csharp
 [RegularExpression(@"^[A-Z]+[a-zA-Z]*$")]
@@ -951,7 +951,7 @@ For this tutorial, the way to get past this error is to delete and re-create the
 
 ![Instructor entity](complex-data-model/_static/instructor-entity.png)
 
-Create *Models/Instructor.cs* with the following code:
+Create `Models/Instructor.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu30/Models/Instructor.cs)]
 
@@ -981,7 +981,7 @@ public OfficeAssignment OfficeAssignment { get; set; }
 
 ![OfficeAssignment entity](complex-data-model/_static/officeassignment-entity.png)
 
-Create *Models/OfficeAssignment.cs* with the following code:
+Create `Models/OfficeAssignment.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu30/Models/OfficeAssignment.cs)]
 
@@ -1012,7 +1012,7 @@ When an `Instructor` entity has a related `OfficeAssignment` entity, each entity
 
 ![Course entity](complex-data-model/_static/course-entity.png)
 
-Update *Models/Course.cs* with the following code:
+Update `Models/Course.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu30/Models/Course.cs?highlight=2,10,13,16,19,21,23)]
 
@@ -1068,7 +1068,7 @@ public ICollection<CourseAssignment> CourseAssignments { get; set; }
 
 ![Department entity](complex-data-model/_static/department-entity.png)
 
-Create *Models/Department.cs* with the following code:
+Create `Models/Department.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu30snapshots/5-complex/Models/Department1.cs)]
 
@@ -1122,7 +1122,7 @@ An enrollment record is for one course taken by one student.
 
 ![Enrollment entity](complex-data-model/_static/enrollment-entity.png)
 
-Update *Models/Enrollment.cs* with the following code:
+Update `Models/Enrollment.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu30/Models/Enrollment.cs?highlight=1-2,16)]
 
@@ -1164,7 +1164,7 @@ Note: EF 6.x supports implicit join tables for many-to-many relationships, but E
 
 ![CourseAssignment entity](complex-data-model/_static/courseassignment-entity.png)
 
-Create *Models/CourseAssignment.cs* with the following code:
+Create `Models/CourseAssignment.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu30/Models/CourseAssignment.cs)]
 
@@ -1193,7 +1193,7 @@ The `Enrollment` join entity defines its own PK, so duplicates of this sort are 
 
 ## Update the database context
 
-Update *Data/SchoolContext.cs* with the following code:
+Update `Data/SchoolContext.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu30/Data/SchoolContext.cs?highlight=15-18,25-31)]
 
@@ -1243,7 +1243,7 @@ The preceding diagram shows:
 
 ## Seed the database
 
-Update the code in *Data/DbInitializer.cs*:
+Update the code in `Data/DbInitializer.cs`:
 
 [!code-csharp[](intro/samples/cu30/Data/DbInitializer.cs)]
 
@@ -1325,7 +1325,7 @@ To force EF Core to create a new database, drop and update the database:
 
 # [Visual Studio Code](#tab/visual-studio-code)
 
-* Open a command window and navigate to the project folder. The project folder contains the *ContosoUniversity.csproj* file.
+* Open a command window and navigate to the project folder. The project folder contains the `ContosoUniversity.csproj` file.
 
 * Run the following command:
 
@@ -1377,7 +1377,7 @@ This section is optional. These steps work only for SQL Server LocalDB and only 
 
 When migrations are run with existing data, there may be FK constraints that are not satisfied with the existing data. With production data, steps must be taken to migrate the existing data. This section provides an example of fixing FK constraint violations. Don't make these code changes without a backup. Don't make these code changes if you completed the preceding [Drop and re-create the database](#drop) section.
 
-The *{timestamp}_ComplexDataModel.cs* file contains the following code:
+The `{timestamp}_ComplexDataModel.cs` file contains the following code:
 
 [!code-csharp[](intro/samples/cu30snapshots/5-complex/Migrations/ComplexDataModel.cs?name=snippet_DepartmentID)]
 
@@ -1392,7 +1392,7 @@ To make the `ComplexDataModel` migration work with existing data:
 
 In the `ComplexDataModel` migration class, update the `Up` method:
 
-* Open the *{timestamp}_ComplexDataModel.cs* file.
+* Open the `{timestamp}_ComplexDataModel.cs` file.
 * Comment out the line of code that adds the `DepartmentID` column to the `Course` table.
 
 [!code-csharp[](intro/samples/cu30snapshots/5-complex/Migrations/ComplexDataModel.cs?name=snippet_CommentOut&highlight=9-13)]
@@ -1438,9 +1438,9 @@ The next two tutorials show how to read and update related data.
 > [Previous tutorial](xref:data/ef-rp/migrations)
 > [Next tutorial](xref:data/ef-rp/read-related-data)
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range="< aspnetcore-3.0"
+:::moniker range="< aspnetcore-3.0"
 
 The previous tutorials worked with a basic data model that was composed of three entities. In this tutorial:
 
@@ -1462,11 +1462,11 @@ In this section, the data model is customized using attributes.
 
 The student pages currently displays the time of the enrollment date. Typically, date fields show only the date and not the time.
 
-Update *Models/Student.cs* with the following highlighted code:
+Update `Models/Student.cs` with the following highlighted code:
 
 [!code-csharp[](intro/samples/cu21/Models/Student.cs?name=snippet_DataType&highlight=3,12-13)]
 
-The [DataType](/dotnet/api/system.componentmodel.dataannotations.datatypeattribute) attribute specifies a data type that's more specific than the database intrinsic type. In this case only the date should be displayed, not the date and time. The [DataType Enumeration](/dotnet/api/system.componentmodel.dataannotations.datatype) provides for many data types, such as Date, Time, PhoneNumber, Currency, EmailAddress, etc. The `DataType` attribute can also enable the app to automatically provide type-specific features. For example:
+The [DataType](xref:System.ComponentModel.DataAnnotations.DataTypeAttribute) attribute specifies a data type that's more specific than the database intrinsic type. In this case only the date should be displayed, not the date and time. The [DataType Enumeration](xref:System.ComponentModel.DataAnnotations.DataType) provides for many data types, such as Date, Time, PhoneNumber, Currency, EmailAddress, etc. The `DataType` attribute can also enable the app to automatically provide type-specific features. For example:
 
 * The `mailto:` link is automatically created for `DataType.EmailAddress`.
 * The date selector is provided for `DataType.Date` in most browsers.
@@ -1496,14 +1496,14 @@ Run the app. Navigate to the Students Index page. Times are no longer displayed.
 
 ### The StringLength attribute
 
-Data validation rules and validation error messages can be specified with attributes. The [StringLength](/dotnet/api/system.componentmodel.dataannotations.stringlengthattribute) attribute specifies the minimum and maximum length of characters that are allowed in a data field. The `StringLength` attribute
+Data validation rules and validation error messages can be specified with attributes. The [StringLength](xref:System.ComponentModel.DataAnnotations.StringLengthAttribute) attribute specifies the minimum and maximum length of characters that are allowed in a data field. The `StringLength` attribute
 also provides client-side and server-side validation. The minimum value has no impact on the database schema.
 
 Update the `Student` model with the following code:
 
 [!code-csharp[](intro/samples/cu21/Models/Student.cs?name=snippet_StringLength&highlight=10,12)]
 
-The preceding code limits names to no more than 50 characters. The `StringLength` attribute doesn't prevent a user from entering white space for a name. The [RegularExpression](/dotnet/api/system.componentmodel.dataannotations.regularexpressionattribute) attribute is used to apply restrictions to the input. For example, the following code requires the first character to be upper case and the remaining characters to be alphabetical:
+The preceding code limits names to no more than 50 characters. The `StringLength` attribute doesn't prevent a user from entering white space for a name. The [RegularExpression](xref:System.ComponentModel.DataAnnotations.RegularExpressionAttribute) attribute is used to apply restrictions to the input. For example, the following code requires the first character to be upper case and the remaining characters to be alphabetical:
 
 ```csharp
 [RegularExpression(@"^[A-Z]+[a-zA-Z]*$")]
@@ -1531,7 +1531,7 @@ When the DB is created, property names on the model are used for column names (e
 
 The `Student` model uses `FirstMidName` for the first-name field because the field might also contain a middle name.
 
-Update the *Student.cs* file with the following highlighted code:
+Update the `Student.cs` file with the following highlighted code:
 
 [!code-csharp[](intro/samples/cu21/Models/Student.cs?name=snippet_Column&highlight=4,14)]
 
@@ -1588,7 +1588,7 @@ Before migration was applied, the name columns were of type [nvarchar(MAX)](/sql
 
 ![Student entity](complex-data-model/_static/student-entity.png)
 
-Update *Models/Student.cs* with the following code:
+Update `Models/Student.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu21/Models/Student.cs?name=snippet_BeforeInheritance&highlight=11,13,15,18,22,24-31)]
 
@@ -1616,7 +1616,7 @@ The `Display` attribute specifies that the caption for the text boxes should be 
 
 ![Instructor entity](complex-data-model/_static/instructor-entity.png)
 
-Create *Models/Instructor.cs* with the following code:
+Create `Models/Instructor.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu21/Models/Instructor.cs)]
 
@@ -1660,7 +1660,7 @@ public OfficeAssignment OfficeAssignment { get; set; }
 
 ![OfficeAssignment entity](complex-data-model/_static/officeassignment-entity.png)
 
-Create *Models/OfficeAssignment.cs* with the following code:
+Create `Models/OfficeAssignment.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu21/Models/OfficeAssignment.cs)]
 
@@ -1708,7 +1708,7 @@ The preceding code specifies that there must be a related instructor. The preced
 
 ![Course entity](complex-data-model/_static/course-entity.png)
 
-Update *Models/Course.cs* with the following code:
+Update `Models/Course.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu21/Models/Course.cs?name=snippet_Final&highlight=2,10,13,16,19,21,23)]
 
@@ -1767,7 +1767,7 @@ public ICollection<CourseAssignment> CourseAssignments { get; set; }
 
 ![Department entity](complex-data-model/_static/department-entity.png)
 
-Create *Models/Department.cs* with the following code:
+Create `Models/Department.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu21/Models/Department.cs?name=snippet_Begin)]
 
@@ -1827,7 +1827,7 @@ An enrollment record is for one course taken by one student.
 
 ![Enrollment entity](complex-data-model/_static/enrollment-entity.png)
 
-Update *Models/Enrollment.cs* with the following code:
+Update `Models/Enrollment.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu21/Models/Enrollment.cs?name=snippet_Final&highlight=1-2,16)]
 
@@ -1869,7 +1869,7 @@ Note: EF 6.x supports implicit join tables for many-to-many relationships, but E
 
 ![CourseAssignment entity](complex-data-model/_static/courseassignment-entity.png)
 
-Create *Models/CourseAssignment.cs* with the following code:
+Create `Models/CourseAssignment.cs` with the following code:
 
 [!code-csharp[](intro/samples/cu21/Models/CourseAssignment.cs)]
 
@@ -1903,7 +1903,7 @@ The `Enrollment` join entity defines its own PK, so duplicates of this sort are 
 
 ## Update the DB context
 
-Add the following highlighted code to *Data/SchoolContext.cs*:
+Add the following highlighted code to `Data/SchoolContext.cs`:
 
 [!code-csharp[](intro/samples/cu21/Data/SchoolContext.cs?name=snippet_BeforeInheritance&highlight=15-18,25-31)]
 
@@ -1953,7 +1953,7 @@ The preceding diagram shows:
 
 ## Seed the DB with Test Data
 
-Update the code in *Data/DbInitializer.cs*:
+Update the code in `Data/DbInitializer.cs`:
 
 [!code-csharp[](intro/samples/cu21/Data/DbInitializer.cs?name=snippet_Final)]
 
@@ -2018,7 +2018,7 @@ Run `Get-Help about_EntityFrameworkCore` from the PMC to get help information.
 
 # [Visual Studio Code](#tab/visual-studio-code)
 
-Open a command window and navigate to the project folder. The project folder contains the *Startup.cs* file.
+Open a command window and navigate to the project folder. The project folder contains the `Startup.cs` file.
 
 Enter the following in the command window:
 
@@ -2053,7 +2053,7 @@ This section is optional. These steps work only if you skipped the preceding [Dr
 
 When migrations are run with existing data, there may be FK constraints that are not satisfied with the existing data. With production data, steps must be taken to migrate the existing data. This section provides an example of fixing FK constraint violations. Don't make these code changes without a backup. Don't make these code changes if you completed the previous section and updated the database.
 
-The *{timestamp}_ComplexDataModel.cs* file contains the following code:
+The `{timestamp}_ComplexDataModel.cs` file contains the following code:
 
 [!code-csharp[](intro/samples/cu/Migrations/20171027005808_ComplexDataModel.cs?name=snippet_DepartmentID)]
 
@@ -2068,7 +2068,7 @@ To make the `ComplexDataModel` migration work with existing data:
 
 Update the `ComplexDataModel` classes `Up` method:
 
-* Open the *{timestamp}_ComplexDataModel.cs* file.
+* Open the `{timestamp}_ComplexDataModel.cs` file.
 * Comment out the line of code that adds the `DepartmentID` column to the `Course` table.
 
 [!code-csharp[](intro/samples/cu/Migrations/20171027005808_ComplexDataModel.cs?name=snippet_CommentOut&highlight=9-13)]
@@ -2095,4 +2095,4 @@ The next tutorial covers related data.
 > [Previous](xref:data/ef-rp/migrations)
 > [Next](xref:data/ef-rp/read-related-data)
 
-::: moniker-end
+:::moniker-end

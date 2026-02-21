@@ -1,16 +1,17 @@
 ---
 title: ASP.NET Core and Entity Framework 6
-author: rick-anderson
-description: Entity Framework 6.3 and later works with ASP.NET Core 3.1 and later.
-ms.author: riande
+author: tdykstra
+description: Entity Framework 6.3 or later works with ASP.NET Core 3.1 or later.
+ms.author: tdykstra
 ms.custom: mvc
-ms.date: 7/14/2020
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Identity", "Let's Encrypt", Razor, SignalR]
+ms.date: 11/06/2023
 uid: data/entity-framework-6
 ---
 # ASP.NET Core and Entity Framework 6
 
-::: moniker range=">= aspnetcore-3.0"
+[!INCLUDE[](~/includes/not-latest-version.md)]
+
+:::moniker range=">= aspnetcore-3.0"
 
 By [Patrick Goode](https://github.com/attrib75)
 
@@ -22,9 +23,9 @@ By [Patrick Goode](https://github.com/attrib75)
 
 * [Entity Framework - Code-Based Configuration](/ef/ef6/fundamentals/configuring/code-based)
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range="< aspnetcore-3.0"
+:::moniker range="< aspnetcore-3.0"
 
 By [Paweł Grudzień](https://github.com/pgrudzien12) and [Damien Pontifex](https://github.com/DamienPontifex)
 
@@ -42,7 +43,7 @@ Regardless of project type in which you locate your EF6 context, only EF6 comman
 
 ## Reference full framework and EF6 in the ASP.NET Core project
 
-Your ASP.NET Core project needs to target .NET Framework and reference EF6. For example, the *.csproj* file of your ASP.NET Core project will look similar to the following example (only relevant parts of the file are shown).
+Your ASP.NET Core project needs to target .NET Framework and reference EF6. For example, the `.csproj` file of your ASP.NET Core project will look similar to the following example (only relevant parts of the file are shown).
 
 [!code-xml[](entity-framework-6/sample/MVCCore/MVCCore.csproj?range=3-9&highlight=2)]
 
@@ -62,7 +63,7 @@ In this sample code, the `IDbContextFactory` implementation passes in a hard-cod
 
 ## Set up dependency injection in the ASP.NET Core project
 
-In the Core project's *Startup.cs* file, set up the EF6 context for dependency injection (DI) in `ConfigureServices`. EF context objects should be scoped for a per-request lifetime.
+In the Core project's `Startup.cs` file, set up the EF6 context for dependency injection (DI) in `ConfigureServices`. EF context objects should be scoped for a per-request lifetime.
 
 [!code-csharp[](entity-framework-6/sample/MVCCore/Startup.cs?name=snippet_ConfigureServices&highlight=5)]
 
@@ -91,10 +92,10 @@ This sample can be created from scratch by the following steps in Visual Studio:
 
 * In the Core project, add a project reference to the class library project.
 
-* In the Core project, in *Startup.cs*, register the context for DI.
+* In the Core project, in `Startup.cs`, register the context for DI.
 
-* In the Core project, in *appsettings.json*, add the connection string.
+* In the Core project, in `appsettings.json`, add the connection string.
 
-* In the Core project, add a controller and view(s) to verify that you can read and write data. (Note that ASP.NET Core MVC scaffolding won't work with the EF6 context referenced from the class library.)
+* In the Core project, add a controller and views to verify that you can read and write data. (Note that ASP.NET Core MVC scaffolding won't work with the EF6 context referenced from the class library.)
 
-::: moniker-end
+:::moniker-end

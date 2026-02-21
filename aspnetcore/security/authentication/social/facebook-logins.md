@@ -1,12 +1,11 @@
 ---
 title: Facebook external login setup in ASP.NET Core
-author: rick-anderson
+author: wadepickett
 description: Tutorial with code examples demonstrating the integration of Facebook account user authentication into an existing ASP.NET Core app.
-ms.author: riande
-ms.custom: "seoapril2019, mvc, seodec18"
+ms.author: wpickett
+ms.custom: mvc, sfi-image-nochange
 ms.date: 12/08/2021
 monikerRange: '>= aspnetcore-3.0'
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: security/authentication/facebook-logins
 ---
 
@@ -49,7 +48,7 @@ This tutorial with code examples shows how to enable your users to sign in with 
 * Enter your development URI with */signin-facebook* appended into the **Valid OAuth Redirect URIs** field (for example: `https://localhost:44320/signin-facebook`). The Facebook authentication configured later in this tutorial will automatically handle requests at */signin-facebook* route to implement the OAuth flow.
 
 > [!NOTE]
-> The URI */signin-facebook* is set as the default callback of the Facebook authentication provider. You can change the default callback URI while configuring the Facebook authentication middleware via the inherited [RemoteAuthenticationOptions.CallbackPath](/dotnet/api/microsoft.aspnetcore.authentication.remoteauthenticationoptions.callbackpath) property of the [FacebookOptions](/dotnet/api/microsoft.aspnetcore.authentication.facebook.facebookoptions) class.
+> The URI */signin-facebook* is set as the default callback of the Facebook authentication provider. You can change the default callback URI while configuring the Facebook authentication middleware via the inherited <xref:Microsoft.AspNetCore.Authentication.RemoteAuthenticationOptions.CallbackPath%2A?displayProperty=nameWithType> property of the <xref:Microsoft.AspNetCore.Authentication.Facebook.FacebookOptions> class.
 
 * Select **Save Changes**.
 
@@ -75,7 +74,7 @@ Store sensitive settings such as the Facebook app ID and secret values with [Sec
 
 ## Configure Facebook Authentication
 
-::: moniker range="< aspnetcore-6.0"
+:::moniker range="< aspnetcore-6.0"
 
 Add the Authentication service to the `Startup.ConfigureServices`:
 
@@ -87,15 +86,15 @@ services.AddAuthentication().AddFacebook(facebookOptions =>
 });
 ```
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range=">= aspnetcore-6.0"
+:::moniker range=">= aspnetcore-6.0"
 
 Add the Authentication service to the `Program`:
 
 [!code-csharp[](~/security/authentication/social/social-code/6.x/ProgramFacebook.cs)]
 
-::: moniker-end
+:::moniker-end
 
 [!INCLUDE [default settings configuration](includes/default-settings.md)]
 
@@ -121,7 +120,7 @@ The following code sets the `AccessDeniedPath` to `"/AccessDeniedPathInfo"`:
 
 We recommend the `AccessDeniedPath` page contains the following information:
 
-*  Remote authentication was canceled.
+* Remote authentication was canceled.
 * This app requires authentication.
 * To try sign-in again, select the Login link.
 
@@ -135,9 +134,7 @@ We recommend the `AccessDeniedPath` page contains the following information:
 <!-- End of React  -->
 [!INCLUDE[Forward request information when behind a proxy or load balancer section](includes/forwarded-headers-middleware.md)]
 
-[!INCLUDE[](includes/chain-auth-providers.md)]
-
- For more information on configuration options supported by Facebook authentication, see the [FacebookOptions](/dotnet/api/microsoft.aspnetcore.builder.facebookoptions) API reference. Configuration options can be used to:
+For more information on configuration options supported by Facebook authentication, see the <xref:Microsoft.AspNetCore.Builder.FacebookOptions> API reference. Configuration options can be used to:
 
 * Request different information about the user.
 * Add query string arguments to customize the login experience.
@@ -154,3 +151,7 @@ We recommend the `AccessDeniedPath` page contains the following information:
 * Once you publish your web site to Azure web app, you should reset the `AppSecret` in the Facebook developer portal.
 
 * Set the `Authentication:Facebook:AppId` and `Authentication:Facebook:AppSecret` as application settings in the Azure portal. The configuration system is set up to read keys from environment variables.
+
+## Additional resources
+
+[Multiple authentication providers](xref:security/authentication/social/index#multiple-authentication-providers)

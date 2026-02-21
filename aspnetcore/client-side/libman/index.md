@@ -1,11 +1,10 @@
 ---
 title: Client-side library acquisition in ASP.NET Core with LibMan
-author: rick-anderson
+author: wadepickett
 description: Learn how to install client-side library assets in an ASP.NET Core project using Library Manager (LibMan).
-ms.author: scaddie
+ms.author: wpickett
 ms.custom: mvc
 ms.date: 08/14/2018
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: client-side/libman/index
 ---
 # Client-side library acquisition in ASP.NET Core with LibMan

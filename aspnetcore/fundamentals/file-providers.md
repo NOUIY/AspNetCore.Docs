@@ -1,28 +1,29 @@
 ---
 title: File Providers in ASP.NET Core
-author: rick-anderson
+author: tdykstra
 description: Learn how ASP.NET Core abstracts file system access through the use of File Providers.
 monikerRange: '>= aspnetcore-2.1'
-ms.author: riande
+ms.author: tdykstra
 ms.custom: mvc
 ms.date: 04/06/2020
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: fundamentals/file-providers
 ---
 # File Providers in ASP.NET Core
 
+[!INCLUDE[](~/includes/not-latest-version.md)]
+
 By [Steve Smith](https://ardalis.com/)
 
-::: moniker range=">= aspnetcore-3.0"
+:::moniker range=">= aspnetcore-3.0"
 
 ASP.NET Core abstracts file system access through the use of File Providers. File Providers are used throughout the ASP.NET Core framework. For example:
 
 * <xref:Microsoft.AspNetCore.Hosting.IWebHostEnvironment> exposes the app's [content root](xref:fundamentals/index#content-root) and [web root](xref:fundamentals/index#web-root) as `IFileProvider` types.
 * [Static File Middleware](xref:fundamentals/static-files) uses File Providers to locate static files.
 * [Razor](xref:mvc/views/razor) uses File Providers to locate pages and views.
-* .NET Core tooling uses File Providers and glob patterns to specify which files should be published.
+* .NET tooling uses File Providers and glob patterns to specify which files should be published.
 
-[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/file-providers/samples) ([how to download](xref:index#how-to-download-a-sample))
+[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/file-providers/samples) ([how to download](xref:fundamentals/index#how-to-download-a-sample))
 
 ## File Provider interfaces
 
@@ -162,18 +163,18 @@ The following table provides common examples of glob patterns.
 | `directory/*/appsettings.json` | Matches all `appsettings.json` files in directories exactly one level below the `directory` folder.|
 | `directory/**/*.txt`           | Matches all files with a `.txt` extension found anywhere under the `directory` folder.|
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range="< aspnetcore-3.0"
+:::moniker range="< aspnetcore-3.0"
 
 ASP.NET Core abstracts file system access through the use of File Providers. File Providers are used throughout the ASP.NET Core framework:
 
 * <xref:Microsoft.Extensions.Hosting.IHostingEnvironment> exposes the app's [content root](xref:fundamentals/index#content-root) and [web root](xref:fundamentals/index#web-root) as `IFileProvider` types.
 * [Static File Middleware](xref:fundamentals/static-files) uses File Providers to locate static files.
 * [Razor](xref:mvc/views/razor) uses File Providers to locate pages and views.
-* .NET Core tooling uses File Providers and glob patterns to specify which files should be published.
+* .NET tooling uses File Providers and glob patterns to specify which files should be published.
 
-[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/file-providers/samples) ([how to download](xref:index#how-to-download-a-sample))
+[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/file-providers/samples) ([how to download](xref:fundamentals/index#how-to-download-a-sample))
 
 ## File Provider interfaces
 
@@ -245,7 +246,7 @@ Use [glob patterns](#glob-patterns) to specify one or more files to embed into t
 
 The sample app creates an `ManifestEmbeddedFileProvider` and passes the currently executing assembly to its constructor.
 
-*Startup.cs*:
+`Startup.cs`:
 
 ```csharp
 var manifestEmbeddedProvider = 
@@ -309,4 +310,4 @@ Matches all `appsettings.json` files in directories exactly one level below the 
 **`directory/**/*.txt`**  
 Matches all files with *.txt* extension found anywhere under the *directory* folder.
 
-::: moniker-end
+:::moniker-end

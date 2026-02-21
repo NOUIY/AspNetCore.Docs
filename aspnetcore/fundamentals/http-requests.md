@@ -3,13 +3,14 @@ title: Make HTTP requests using IHttpClientFactory in ASP.NET Core
 author: stevejgordon
 description: Learn about using the IHttpClientFactory interface to manage logical HttpClient instances in ASP.NET Core.
 monikerRange: '>= aspnetcore-2.1'
-ms.author: scaddie
+ms.author: tdykstra
 ms.custom: mvc
 ms.date: 11/09/2021
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: fundamentals/http-requests
 ---
 # Make HTTP requests using IHttpClientFactory in ASP.NET Core
+
+[!INCLUDE[](~/includes/not-latest-version.md)]
 
 :::moniker range=">= aspnetcore-6.0"
 
@@ -37,7 +38,7 @@ The best approach depends upon the app's requirements.
 
 ### Basic usage
 
-Register `IHttpClientFactory` by calling `AddHttpClient` in *Program.cs*:
+Register `IHttpClientFactory` by calling `AddHttpClient` in `Program.cs`:
 
 :::code language="csharp" source="http-requests/samples/6.x/HttpRequestsSample/Program.cs" id="snippet_AddHttpClientBasic" highlight="4":::
 
@@ -54,7 +55,7 @@ Named clients are a good choice when:
 * The app requires many distinct uses of `HttpClient`.
 * Many `HttpClient`s have different configuration.
 
-Specify configuration for a named `HttpClient` during its registration in *Program.cs*:
+Specify configuration for a named `HttpClient` during its registration in `Program.cs`:
 
 :::code language="csharp" source="http-requests/samples/6.x/HttpRequestsSample/Program.cs" id="snippet_AddHttpClientNamed":::
 
@@ -98,7 +99,7 @@ In the preceding code:
 
 API-specific methods can be created that expose `HttpClient` functionality. For example, the `GetAspNetCoreDocsBranches` method encapsulates code to retrieve docs GitHub branches.
 
-The following code calls <xref:Microsoft.Extensions.DependencyInjection.HttpClientFactoryServiceCollectionExtensions.AddHttpClient%2A> in *Program.cs* to register the `GitHubService` typed client class:
+The following code calls <xref:Microsoft.Extensions.DependencyInjection.HttpClientFactoryServiceCollectionExtensions.AddHttpClient%2A> in `Program.cs` to register the `GitHubService` typed client class:
 
 :::code language="csharp" source="http-requests/samples/6.x/HttpRequestsSample/Program.cs" id="snippet_AddHttpClientTyped":::
 
@@ -111,7 +112,7 @@ The typed client can be injected and consumed directly:
 
 :::code language="csharp" source="http-requests/samples/6.x/HttpRequestsSample/Pages/Consumption/TypedClient.cshtml.cs" id="snippet_Class" highlight="5-6,14":::
 
-The configuration for a typed client can also be specified during its registration in *Program.cs*, rather than in the typed client's constructor:
+The configuration for a typed client can also be specified during its registration in `Program.cs`, rather than in the typed client's constructor:
 
 :::code language="csharp" source="http-requests/samples/6.x/HttpRequestsSample/Snippets/Program.cs" id="snippet_AddHttpClientTypedInline":::
 
@@ -219,13 +220,13 @@ The following delegating handler consumes and uses `IOperationScoped` to set the
 
 :::code language="csharp" source="http-requests/samples/6.x/HttpRequestsSample/Handlers/OperationHandler.cs" id="snippet_Class" highlight="5-6,11":::
 
-In the [`HttpRequestsSample` download](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/http-requests/samples/6.0/HttpRequestsSample), navigate to `/Operation` and refresh the page. The request scope value changes for each request, but the handler scope value only changes every 5 seconds.
+In the [`HttpRequestsSample` download](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/http-requests/samples/6.x/HttpRequestsSample), navigate to `/Operation` and refresh the page. The request scope value changes for each request, but the handler scope value only changes every 5 seconds.
 
 Handlers can depend upon services of any scope. Services that handlers depend upon are disposed when the handler is disposed.
 
 Use one of the following approaches to share per-request state with message handlers:
 
-* Pass data into the handler using [HttpRequestMessage.Properties](xref:System.Net.Http.HttpRequestMessage.Properties).
+* Pass data into the handler using <xref:System.Net.Http.HttpRequestMessage.Options%2A?displayProperty=nameWithType>.
 * Use <xref:Microsoft.AspNetCore.Http.IHttpContextAccessor> to access the current request.
 * Create a custom <xref:System.Threading.AsyncLocal%601> storage object to pass the data.
 
@@ -277,7 +278,7 @@ An approach to managing regularly used policies is to define them once and regis
 
 In the preceding code:
 
-* Two policies, `Regular` and `Short`, are added to the Polly registry.
+* Two policies, `Regular` and `Long`, are added to the Polly registry.
 * <xref:Microsoft.Extensions.DependencyInjection.PollyHttpClientBuilderExtensions.AddPolicyHandlerFromRegistry%2A> configures individual named clients to use these policies from the Polly registry.
 
 For more information on `IHttpClientFactory` and Polly integrations, see the [Polly wiki](https://github.com/App-vNext/Polly/wiki/Polly-and-HttpClientFactory).
@@ -367,7 +368,7 @@ In the following example:
 Header propagation is an ASP.NET Core middleware to propagate HTTP headers from the incoming request to the outgoing `HttpClient` requests. To use header propagation:
 
 * Install the [Microsoft.AspNetCore.HeaderPropagation](https://www.nuget.org/packages/Microsoft.AspNetCore.HeaderPropagation) package.
-* Configure the `HttpClient` and middleware pipeline in *Program.cs*:
+* Configure the `HttpClient` and middleware pipeline in `Program.cs`:
 
   :::code language="csharp" source="http-requests/samples/6.x/HttpRequestsSample/Snippets/Program.cs" id="snippet_AddHttpClientHeaderPropagation" highlight="4-10,17":::
 
@@ -375,7 +376,7 @@ Header propagation is an ASP.NET Core middleware to propagate HTTP headers from 
 
 ## Additional resources
 
-* [View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/http-requests/samples) ([how to download](xref:index#how-to-download-a-sample))
+* [View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/http-requests/samples) ([how to download](xref:fundamentals/index#how-to-download-a-sample))
 * [Use HttpClientFactory to implement resilient HTTP requests](/dotnet/standard/microservices-architecture/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests)
 * [Implement HTTP call retries with exponential backoff with HttpClientFactory and Polly policies](/dotnet/standard/microservices-architecture/implement-resilient-applications/implement-http-call-retries-exponential-backoff-polly)
 * [Implement the Circuit Breaker pattern](/dotnet/standard/microservices-architecture/implement-resilient-applications/implement-circuit-breaker-pattern)
@@ -394,7 +395,7 @@ An <xref:System.Net.Http.IHttpClientFactory> can be registered and used to confi
 * Manages the pooling and lifetime of underlying `HttpClientMessageHandler` instances. Automatic management avoids common DNS (Domain Name System) problems that occur when manually managing `HttpClient` lifetimes.
 * Adds a configurable logging experience (via `ILogger`) for all requests sent through clients created by the factory.
 
-[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/http-requests/samples) ([how to download](xref:index#how-to-download-a-sample)).
+[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/http-requests/samples) ([how to download](xref:fundamentals/index#how-to-download-a-sample)).
 
 The sample code in this topic version uses <xref:System.Text.Json> to deserialize JSON content returned in HTTP responses. For samples that use `Json.NET` and `ReadAsAsync<T>`, use the version selector to select a 2.x version of this topic.
 
@@ -646,7 +647,7 @@ Handlers can depend upon services of any scope. Services that handlers depend up
 
 Use one of the following approaches to share per-request state with message handlers:
 
-* Pass data into the handler using [HttpRequestMessage.Properties](xref:System.Net.Http.HttpRequestMessage.Properties).
+* Pass data into the handler using <xref:System.Net.Http.HttpRequestMessage.Options%2A?displayProperty=nameWithType>.
 * Use <xref:Microsoft.AspNetCore.Http.IHttpContextAccessor> to access the current request.
 * Create a custom <xref:System.Threading.AsyncLocal%601> storage object to pass the data.
 
@@ -790,7 +791,7 @@ Header propagation is an ASP.NET Core middleware to propagate HTTP headers from 
 * Reference the [Microsoft.AspNetCore.HeaderPropagation](https://www.nuget.org/packages/Microsoft.AspNetCore.HeaderPropagation) package.
 * Configure the middleware and `HttpClient` in `Startup`:
 
-  :::code language="csharp" source="http-requests/samples/3.x/Startup.cs" highlight="5-9,21&name=snippet":::
+  :::code language="csharp" source="http-requests/samples/3.x/Startup.cs" id="snippet" highlight="5-9,21":::
 
 * The client includes the configured headers on outbound requests:
 
@@ -819,7 +820,7 @@ An <xref:System.Net.Http.IHttpClientFactory> can be registered and used to confi
 * Manages the pooling and lifetime of underlying `HttpClientMessageHandler` instances. Automatic management avoids common DNS (Domain Name System) problems that occur when manually managing `HttpClient` lifetimes.
 * Adds a configurable logging experience (via `ILogger`) for all requests sent through clients created by the factory.
 
-[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/http-requests/samples) ([how to download](xref:index#how-to-download-a-sample)).
+[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/http-requests/samples) ([how to download](xref:fundamentals/index#how-to-download-a-sample)).
 
 The sample code in this topic version uses <xref:System.Text.Json> to deserialize JSON content returned in HTTP responses. For samples that use `Json.NET` and `ReadAsAsync<T>`, use the version selector to select a 2.x version of this topic.
 
@@ -889,7 +890,6 @@ Typed clients:
 A typed client accepts an `HttpClient` parameter in its constructor:
 
 :::code language="csharp" source="http-requests/samples/3.x/HttpClientFactorySample/GitHub/GitHubService.cs" id="snippet1" highlight="5":::
-[!INCLUDE[about the series](~/includes/code-comments-loc.md)]
 
 In the preceding code:
 
@@ -1068,7 +1068,7 @@ Handlers can depend upon services of any scope. Services that handlers depend up
 
 Use one of the following approaches to share per-request state with message handlers:
 
-* Pass data into the handler using [HttpRequestMessage.Properties](xref:System.Net.Http.HttpRequestMessage.Properties).
+* Pass data into the handler using <xref:System.Net.Http.HttpRequestMessage.Properties%2A?displayProperty=nameWithType>.
 * Use <xref:Microsoft.AspNetCore.Http.IHttpContextAccessor> to access the current request.
 * Create a custom <xref:System.Threading.AsyncLocal%601> storage object to pass the data.
 
@@ -1212,7 +1212,7 @@ Header propagation is an ASP.NET Core middleware to propagate HTTP headers from 
 * Reference the [Microsoft.AspNetCore.HeaderPropagation](https://www.nuget.org/packages/Microsoft.AspNetCore.HeaderPropagation) package.
 * Configure the middleware and `HttpClient` in `Startup`:
 
-  :::code language="csharp" source="http-requests/samples/3.x/Startup.cs" highlight="5-9,21&name=snippet":::
+  :::code language="csharp" source="http-requests/samples/3.x/Startup.cs" id="snippet" highlight="5-9,21":::
 
 * The client includes the configured headers on outbound requests:
 
@@ -1241,7 +1241,7 @@ An <xref:System.Net.Http.IHttpClientFactory> can be registered and used to confi
 * Manages the pooling and lifetime of underlying `HttpClientMessageHandler` instances to avoid common DNS problems that occur when manually managing `HttpClient` lifetimes.
 * Adds a configurable logging experience (via `ILogger`) for all requests sent through clients created by the factory.
 
-[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/http-requests/samples) ([how to download](xref:index#how-to-download-a-sample))
+[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/fundamentals/http-requests/samples) ([how to download](xref:fundamentals/index#how-to-download-a-sample))
 
 ## Prerequisites
 
@@ -1534,7 +1534,7 @@ In the following example:
 
 Header propagation is a community supported middleware to propagate HTTP headers from the incoming request to the outgoing HTTP Client requests. To use header propagation:
 
-* Reference the community supported port of the package [HeaderPropagation](https://www.nuget.org/packages/HeaderPropagation). ASP.NET Core 3.1 and later supports [Microsoft.AspNetCore.HeaderPropagation](https://www.nuget.org/packages/Microsoft.AspNetCore.HeaderPropagation).
+* Reference the community supported port of the package [HeaderPropagation](https://www.nuget.org/packages/HeaderPropagation). ASP.NET Core 3.1 or later supports [Microsoft.AspNetCore.HeaderPropagation](https://www.nuget.org/packages/Microsoft.AspNetCore.HeaderPropagation).
 
 * Configure the middleware and `HttpClient` in `Startup`:
 

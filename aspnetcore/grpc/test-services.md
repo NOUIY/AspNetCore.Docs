@@ -3,22 +3,24 @@ title: Test gRPC services in ASP.NET Core
 author: jamesnk
 description: Learn how to test gRPC services in ASP.NET Core apps.
 monikerRange: '>= aspnetcore-3.1'
-ms.author: jamesnk
+ms.author: wpickett
 ms.custom: mvc
 ms.date: 01/01/2022
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: grpc/test-services
 ---
 # Test gRPC services in ASP.NET Core
+
+[!INCLUDE[](~/includes/not-latest-version.md)]
 
 By: [James Newton-King](https://twitter.com/jamesnk)
 
 Testing is an important aspect of building stable and maintainable software. This article discusses how to test ASP.NET Core gRPC services.
 
-There are two common approaches for testing gRPC services:
+There are three common approaches for testing gRPC services:
 
 * **Unit testing**: Test gRPC services directly from a unit testing library.
-* **Integration testing**: The gRPC app is hosted in <xref:Microsoft.AspNetCore.TestHost.TestServer> from the [`Microsoft.AspNetCore.TestHost`](https://www.nuget.org/packages/Microsoft.AspNetCore.TestHost) package. gRPC services are tested by calling them using a gRPC client from a unit testing library.
+* **Integration testing**: The gRPC app is hosted in <xref:Microsoft.AspNetCore.TestHost.TestServer>, an in-memory test server from the [`Microsoft.AspNetCore.TestHost`](https://www.nuget.org/packages/Microsoft.AspNetCore.TestHost) package. gRPC services are tested by calling them using a gRPC client from a unit testing library.
+* **Manual testing**: Test gRPC servers with ad hoc calls. For information about how to use command-line and UI tooling with gRPC services, see <xref:grpc/test-tools>.
 
 In unit testing, only the gRPC service is involved. Dependencies injected into the service must be mocked. In integration testing, the gRPC service and its auxiliary infrastructure are part of the test. This includes app startup, dependency injection, routing and authentication, and authorization.
 
@@ -26,7 +28,7 @@ In unit testing, only the gRPC service is involved. Dependencies injected into t
 
 To demonstrate service tests, review the following service in the sample app. 
 
-[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/grpc/test-services/sample) ([how to download](xref:index#how-to-download-a-sample))
+[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/grpc/test-services/sample) ([how to download](xref:fundamentals/index#how-to-download-a-sample))
 
 The `TesterService` returns greetings using gRPC's four method types.
 
@@ -62,7 +64,7 @@ To configure a `HttpContext` during test setup, create a new instance and add it
 var httpContext = new DefaultHttpContext();
 
 var serverCallContext = TestServerCallContext.Create();
-serviceCallContext.UserState["__HttpContext"] = httpContext;
+serverCallContext.UserState["__HttpContext"] = httpContext;
 ```
 
 Execute service methods with this call context to use the configured `HttpContext` instance.

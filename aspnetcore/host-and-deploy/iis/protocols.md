@@ -1,16 +1,17 @@
 ---
 title: Use ASP.NET Core with HTTP/2 on IIS
-author: rick-anderson
+author: tdykstra
 description: Learn how to use HTTP/2 features with IIS.
 monikerRange: '>= aspnetcore-5.0'
-ms.author: riande
+ms.author: tdykstra
 ms.custom: mvc
 ms.date: 01/13/2020
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: host-and-deploy/iis/protocols
 ---
 
 # Use ASP.NET Core with HTTP/2 on IIS
+
+[!INCLUDE[](~/includes/not-latest-version.md)]
 
 By [Justin Kotalik](https://github.com/jkotalik)
 
@@ -34,8 +35,8 @@ Additional HTTP/2 features in IIS support gRPC, including support for response t
 Requirements to run gRPC on IIS:
 
 * In-process hosting.
-* Windows 10, OS Build 20300.1000 or later. May require use of a [Windows Insider](https://insider.windows.com) build.
-* TLS 1.2 or later connection
+* Windows 11 Build 22000 or later, Windows Server 2022 Build 20348 or later.
+* TLS 1.2 or later connection.
 
 ### Trailers
 

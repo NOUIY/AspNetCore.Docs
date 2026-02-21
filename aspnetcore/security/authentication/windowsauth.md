@@ -1,26 +1,67 @@
 ---
 title: Configure Windows Authentication in ASP.NET Core
-author: rick-anderson
+author: wadepickett
 description: Learn how to configure Windows Authentication in ASP.NET Core for IIS and HTTP.sys.
 monikerRange: '>= aspnetcore-3.1'
-ms.author: riande
-ms.custom: "mvc, seodec18"
-ms.date: 11/15/2021
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.author: wpickett
+ms.custom: mvc
+ms.date: 10/17/2025
 uid: security/authentication/windowsauth
+ms.ai: assisted
 ---
 # Configure Windows Authentication in ASP.NET Core
 
 By [Rick Anderson](https://twitter.com/RickAndMSFT) and [Kirk Larkin](https://twitter.com/serpent5)
 
-::: moniker range=">= aspnetcore-6.0"
+:::moniker range=">= aspnetcore-6.0"
 
 Windows Authentication (also known as Negotiate, Kerberos, or NTLM authentication) can be configured for ASP.NET Core apps hosted with [IIS](xref:host-and-deploy/iis/index), [Kestrel](xref:fundamentals/servers/kestrel), or [HTTP.sys](xref:fundamentals/servers/httpsys).
 
 Windows Authentication relies on the operating system to authenticate users of ASP.NET Core apps. Windows Authentication is used for servers that run on a corporate network using Active Directory domain identities or Windows accounts to identify users. Windows Authentication is best suited to intranet environments where users, client apps, and web servers belong to the same Windows domain.
 
+## When to use Windows Authentication
+
+Windows Authentication is suitable for web applications that operate within an organization's private internal network, accessible only to employees (and other authorized users) within the same network. The user management is done within Active Directory (AD), and users use their existing Windows domain account to authenticate.
+
+Windows Authentication provides several benefits for intranet applications:
+
+* **Seamless user experience** - Users are automatically authenticated based on their active Windows session, or are prompted to enter their Windows credentials via a standard browser dialog box.
+* **Integration with Active Directory** - Leverages existing Windows infrastructure and security policies, including user groups, account lockouts, and multi-factor authentication (MFA).
+* **Secure credential handling** - Authentication is handled through secure protocols like Kerberos, with no need to manage separate user credentials.
+* **Role-based authorization** - Applications can access user and group information from Active Directory, enabling role-based access control (RBAC) within the application.
+* **Reduced administrative overhead** - No need to maintain a separate user database or credential management system.
+
+This makes Windows Authentication ideal for organizations that want to make use of their existing Windows infrastructure, such as intranet portals.
+
 > [!NOTE]
-> Windows Authentication isn't supported with HTTP/2. Authentication challenges can be sent on HTTP/2 responses, but the client must downgrade to HTTP/1.1 before authenticating.
+> Windows Authentication isn't supported with HTTP/2. While authentication challenges can be sent over HTTP/2 responses, the client must downgrade to HTTP/1.1 to complete the authentication process. This is a protocol limitation, not a deprecation of Windows Authentication. Once authenticated, normal HTTP/2 communication can resume for subsequent requests.
+
+For public-facing applications Windows Authentication isn't recommended due to security and usability concerns.
+These reasons include:
+* Windows Authentication is best kept internal to protect Active Directory, exposing it outside an internal network introduces security risks.
+* External users don't have Windows domain accounts.
+* It's complex to configure the necessary network infrastructure securely, and firewalls or proxies may interfere with the authentication process.
+* It's not cross-platform and doesn't provide customization options for designs and user experiences.
+
+### Alternatives for different scenarios
+
+Depending on your application requirements, consider these alternatives:
+
+**For public-facing applications:**
+
+* [OpenID Connect](xref:security/how-to-choose-identity) with external identity providers
+* ASP.NET Core Identity with local user accounts (<xref:security/authentication/identity>)
+* Azure Active Directory (AAD) for Microsoft 365 environments
+
+**For mixed environments** with both intranet and external users:
+
+* Active Directory Federation Services (ADFS) with OpenID Connect
+* Azure Active Directory with hybrid configuration
+
+**For corporate environments using modern authentication:**
+
+* Azure Active Directory with single sign-on
+* SAML-based solutions with third-party identity providers
 
 ## Proxy and load balancer scenarios
 
@@ -33,7 +74,7 @@ An alternative to Windows Authentication in environments where proxies and load 
 
 ## IIS/IIS Express
 
-Add authentication services by invoking <xref:Microsoft.Extensions.DependencyInjection.AuthenticationServiceCollectionExtensions.AddAuthentication*> (<xref:Microsoft.AspNetCore.Server.IISIntegration?displayProperty=fullName> namespace) in `Program.cs`:
+Add the [`Microsoft.AspNetCore.Authentication.Negotiate` NuGet package](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Negotiate) and authentication services by calling <xref:Microsoft.Extensions.DependencyInjection.AuthenticationServiceCollectionExtensions.AddAuthentication%2A> in `Program.cs`:
 
 [!code-csharp[](windowsauth/6.0samples/WebRPwinAuth/Program.cs?name=snippet1&highlight=5-6)]
 
@@ -41,9 +82,9 @@ The preceding code was generated by the ASP.NET Core Razor Pages template with *
 
 ### Launch settings (debugger)
 
-Configuration for launch settings only affects the *Properties/launchSettings.json* file for IIS Express and doesn't configure IIS for Windows Authentication. Server configuration is explained in the [IIS](#iis) section.
+Configuration for launch settings only affects the `Properties/launchSettings.json` file for IIS Express and doesn't configure IIS for Windows Authentication. Server configuration is explained in the [IIS](#iis) section.
 
-The **Web Application** templates available via Visual Studio or the .NET Core CLI can be configured to support Windows Authentication, which updates the *Properties/launchSettings.json* file automatically.
+The **Web Application** templates available via Visual Studio or the .NET CLI can be configured to support Windows Authentication, which updates the `Properties/launchSettings.json` file automatically.
 
 # [Visual Studio](#tab/visual-studio)
 
@@ -62,15 +103,15 @@ The project's properties enable Windows Authentication and disable Anonymous Aut
 1. Clear the checkbox for **Enable Anonymous Authentication**.
 1. Select the checkbox for **Enable Windows Authentication**.
 
-Alternatively, the properties can be configured in the `iisSettings` node of the *launchSettings.json* file:
+Alternatively, the properties can be configured in the `iisSettings` node of the `launchSettings.json` file:
 
 [!code-json[](windowsauth/sample_snapshot/launchSettings.json?highlight=2-3)]
 
-# [.NET Core CLI](#tab/netcore-cli)
+# [.NET CLI](#tab/net-cli)
 
 **New project**
 
-Execute the [dotnet new](/dotnet/core/tools/dotnet-new) command with the `webapp` argument (ASP.NET Core Web App) and `--auth Windows` switch:
+Execute the [`dotnet new` command](/dotnet/core/tools/dotnet-new) with the `webapp` argument (ASP.NET Core Web App) and `--auth Windows` switch:
 
 ```dotnetcli
 dotnet new webapp --auth Windows
@@ -78,7 +119,7 @@ dotnet new webapp --auth Windows
 
 **Existing project**
 
-Update the `iisSettings` node of the *launchSettings.json* file:
+Update the `iisSettings` node of the `launchSettings.json` file:
 
 [!code-json[](windowsauth/sample_snapshot/launchSettings.json?highlight=2-3)]
 
@@ -93,7 +134,7 @@ IIS uses the [ASP.NET Core Module](xref:host-and-deploy/aspnet-core-module) to h
 
 If you haven't already done so, enable IIS to host ASP.NET Core apps. For more information, see <xref:host-and-deploy/iis/index>.
 
-Enable the IIS Role Service for Windows Authentication. For more information, see [Enable Windows Authentication in IIS Role Services (see Step 2)](xref:host-and-deploy/iis/index#iis-configuration).
+Enable the IIS Role Service for Windows Authentication. For more information, see [Enable Windows Authentication in IIS Role Services (see Step 2)](xref:host-and-deploy/iis/advanced#iis-configuration).
 
 [IIS Integration Middleware](xref:host-and-deploy/iis/index#enable-the-iisintegration-components) is configured to automatically authenticate requests by default. For more information, see [Host ASP.NET Core on Windows with IIS: IIS options (AutomaticAuthentication)](xref:host-and-deploy/iis/index#iis-options).
 
@@ -105,7 +146,7 @@ Use **either** of the following approaches:
 
   [!code-xml[](windowsauth/sample_snapshot/web_2.config)]
 
-  When the project is published by the .NET Core SDK (without the `<IsTransformWebConfigDisabled>` property set to `true` in the project file), the published *web.config* file includes the `<location><system.webServer><security><authentication>` section. For more information on the `<IsTransformWebConfigDisabled>` property, see <xref:host-and-deploy/iis/index#webconfig-file>.
+  When the project is published by the .NET SDK (without the `<IsTransformWebConfigDisabled>` property set to `true` in the project file), the published *web.config* file includes the `<location><system.webServer><security><authentication>` section. For more information on the `<IsTransformWebConfigDisabled>` property, see <xref:host-and-deploy/iis/web-config>.
 
 * **After publishing and deploying the project,** perform server-side configuration with the IIS Manager:
 
@@ -118,7 +159,7 @@ Use **either** of the following approaches:
 
   [!code-xml[](windowsauth/sample_snapshot/web_1.config?highlight=4-5)]
 
-  The `<system.webServer>` section added to the *web.config* file by IIS Manager is outside of the app's `<location>` section added by the .NET Core SDK when the app is published. Because the section is added outside of the `<location>` node, the settings are inherited by any [sub-apps](xref:host-and-deploy/iis/index#sub-applications) to the current app. To prevent inheritance, move the added `<security>` section inside of the `<location><system.webServer>` section that the .NET Core SDK provided.
+  The `<system.webServer>` section added to the *web.config* file by IIS Manager is outside of the app's `<location>` section added by the .NET SDK when the app is published. Because the section is added outside of the `<location>` node, the settings are inherited by any [sub-apps](xref:host-and-deploy/iis/index#sub-applications) to the current app. To prevent inheritance, move the added `<security>` section inside of the `<location><system.webServer>` section that the .NET SDK provided.
 
   When IIS Manager is used to add the IIS configuration, it only affects the app's *web.config* file on the server. A subsequent deployment of the app may overwrite the settings on the server if the server's copy of *web.config* is replaced by the project's *web.config* file. Use **either** of the following approaches to manage the settings:
 
@@ -127,7 +168,7 @@ Use **either** of the following approaches:
 
 ## Kestrel
 
-The [Microsoft.AspNetCore.Authentication.Negotiate](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Negotiate) NuGet package can be used with [Kestrel](xref:fundamentals/servers/kestrel) to support Windows Authentication using Negotiate and Kerberos on Windows, Linux, and macOS.
+The [`Microsoft.AspNetCore.Authentication.Negotiate` NuGet package](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Negotiate) can be used with [Kestrel](xref:fundamentals/servers/kestrel) to enable Windows Authentication using Negotiate and Kerberos on Windows, Linux, and macOS.
 
 > [!WARNING]
 > Credentials can be persisted across requests on a connection. *Negotiate authentication must not be used with proxies unless the proxy maintains a 1:1 connection affinity (a persistent connection) with Kestrel.*
@@ -135,15 +176,21 @@ The [Microsoft.AspNetCore.Authentication.Negotiate](https://www.nuget.org/packag
 > [!NOTE]
 > The Negotiate handler detects if the underlying server supports Windows Authentication natively and if it is enabled. If the server supports Windows Authentication but it is disabled, an error is thrown asking you to enable the server implementation. When Windows Authentication is enabled in the server, the Negotiate handler transparently forwards authentication requests to it.
 
-Authentication is enabled by the following highlighted code to *Program.cs*:
+Authentication and a fallback authorization policy are enabled by the following highlighted code in `Program.cs`:
 
-[!code-csharp[](windowsauth/6.0samples/WebRPwinAuth/Program.cs?name=snippet1&highlight=1,4-11,27-28)]
+[!code-csharp[](windowsauth/6.0samples/WebRPwinAuth/Program.cs?name=snippet1&highlight=1,5-6,8-11,26-27)]
 
-The preceding code was generated by the ASP.NET Core Razor Pages template with **Windows Authentication** specified. The following APIs are used in the preceding code:
+The preceding code was generated by the ASP.NET Core Razor Pages template with **Windows Authentication** specified.
 
-* <xref:Microsoft.Extensions.DependencyInjection.AuthenticationServiceCollectionExtensions.AddAuthentication*>
-*  <xref:Microsoft.Extensions.DependencyInjection.NegotiateExtensions.AddNegotiate*> 
-* <xref:Microsoft.AspNetCore.Builder.AuthAppBuilderExtensions.UseAuthentication*>
+Highlighted lines:
+
+* 5–6: <xref:Microsoft.Extensions.DependencyInjection.AuthenticationServiceCollectionExtensions.AddAuthentication%2A> and <xref:Microsoft.Extensions.DependencyInjection.NegotiateExtensions.AddNegotiate%2A> register and configure the Negotiate authentication handler.
+* 8–11: <xref:Microsoft.Extensions.DependencyInjection.AuthorizationServiceCollectionExtensions.AddAuthorization%2A> with a fallback policy enforces authenticated users by default.
+* 26: <xref:Microsoft.AspNetCore.Builder.AuthAppBuilderExtensions.UseAuthentication%2A> executes authentication handlers for each request and populates <xref:Microsoft.AspNetCore.Http.HttpContext.User?displayProperty=nameWithType>.
+* 27: <xref:Microsoft.AspNetCore.Builder.AuthorizationAppBuilderExtensions.UseAuthorization%2A> evaluates authorization policies, including the fallback policy.
+
+> [!NOTE]
+> Calling <xref:Microsoft.Extensions.DependencyInjection.AuthenticationServiceCollectionExtensions.AddAuthentication%2A> and <xref:Microsoft.Extensions.DependencyInjection.NegotiateExtensions.AddNegotiate%2A> registers and configures the Negotiate handler; it does not run authentication per request. The Authentication middleware (<xref:Microsoft.AspNetCore.Builder.AuthAppBuilderExtensions.UseAuthentication%2A>) invokes the handler and populates <xref:Microsoft.AspNetCore.Http.HttpContext.User?displayProperty=nameWithType>, and must appear before <xref:Microsoft.AspNetCore.Builder.AuthorizationAppBuilderExtensions.UseAuthorization%2A> for policy evaluation to work.
 
 <a name="rbac"></a>
 ### Kerberos authentication and role-based access control (RBAC)
@@ -162,14 +209,32 @@ Anonymous requests are allowed. Use [ASP.NET Core Authorization](xref:security/a
 
 ### Windows environment configuration
 
-The [Microsoft.AspNetCore.Authentication.Negotiate](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Negotiate) component performs [User Mode](/windows-hardware/drivers/gettingstarted/user-mode-and-kernel-mode) authentication. Service Principal Names (SPNs) must be added to the user account running the service, not the machine account. Execute `setspn -S HTTP/myservername.mydomain.com myuser` in an administrative command shell.
+The [`Microsoft.AspNetCore.Authentication.Negotiate` API](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Negotiate) performs [User Mode](/windows-hardware/drivers/gettingstarted/user-mode-and-kernel-mode) authentication. Service Principal Names (SPNs) must be added to the user account running the service, not the machine account. Execute `setspn -S HTTP/myservername.mydomain.com myuser` in an administrative command shell.
+
+#### Kerberos vs NTLM
+
+The Negotiate package on Kestrel for ASP.NET Core attempts to use Kerberos, which is a more secure and peformant authentication scheme than [NTLM](/troubleshoot/windows-server/windows-security/ntlm-user-authentication):
+
+[!code-csharp[](windowsauth/6.0samples/WebRPwinAuth/Program.cs?name=snippet11&highlight=5-6)]
+
+<xref:Microsoft.AspNetCore.Authentication.Negotiate.NegotiateDefaults.AuthenticationScheme%2A?displayProperty=nameWithType> specifies Kerberos because it's the default.
+
+IIS, IISExpress, and Kestrel support both Kerberos and [NTLM](/dotnet/framework/wcf/feature-details/understanding-http-authentication).
+
+Examining the [WWW-Authenticate:](https://developer.mozilla.org/docs/Web/HTTP/Headers/WWW-Authenticate) header using IIS or IISExpress with a tool like Fiddler shows either `Negotiate` or NTLM.
+
+Kestrel only shows `WWW-Authenticate: Negotiate`
+
+The `WWW-Authenticate: Negotiate` header means that the server can use NTLM or Kerberos. Kestrel requires the [`Negotiate` header prefix](https://www.ietf.org/rfc/rfc4559.txt), it doesn’t support directly specifying `NTLM` in the request or response auth headers. NTLM is supported in Kestrel, but it must be sent as `Negotiate`.
+
+On Kestrel, to see if NTLM or Kerberos is used, Base64 decode the header and it shows either `NTLM` or `HTTP`. `HTTP` indicates Kerberos was used.
 
 ### Linux and macOS environment configuration
 
-Instructions for joining a Linux or macOS machine to a Windows domain are available in the [Connect Azure Data Studio to your SQL Server using Windows authentication - Kerberos](/sql/azure-data-studio/enable-kerberos?view=sql-server-2017#join-your-os-to-the-active-directory-domain-controller&preserve-view=true ) article. The instructions create a machine account for the Linux machine on the domain. SPNs must be added to that machine account.
+Instructions for joining a Linux or macOS machine to a Windows domain are available in the [Connect Azure Data Studio to your SQL Server using Windows authentication - Kerberos](/sql/azure-data-studio/enable-kerberos?view=sql-server-2017#join-your-os-to-the-active-directory-domain-controller&preserve-view=true) article. The instructions create a machine account for the Linux machine on the domain. SPNs must be added to that machine account.
 
 > [!NOTE]
-> When following the guidance in the [Connect Azure Data Studio to your SQL Server using Windows authentication - Kerberos](/sql/azure-data-studio/enable-kerberos?view=sql-server-2017#join-your-os-to-the-active-directory-domain-controller&preserve-view=true ) article, replace `python-software-properties` with `python3-software-properties` if needed.
+> When following the guidance in the [Connect Azure Data Studio to your SQL Server using Windows authentication - Kerberos](/sql/azure-data-studio/enable-kerberos?view=sql-server-2017#join-your-os-to-the-active-directory-domain-controller&preserve-view=true) article, replace `python-software-properties` with `python3-software-properties` if needed.
 
 Once the Linux or macOS machine is joined to the domain, additional steps are required to provide a [keytab file](/archive/blogs/pie/all-you-need-to-know-about-keytab-files) with the SPNs:
 
@@ -197,8 +262,16 @@ The following code adds authentication and configures the app's web host to use 
 > [!NOTE]
 > HTTP.sys delegates to [Kernel Mode](/windows-hardware/drivers/gettingstarted/user-mode-and-kernel-mode) authentication with the Kerberos authentication protocol. [User Mode](/windows-hardware/drivers/gettingstarted/user-mode-and-kernel-mode) authentication isn't supported with Kerberos and HTTP.sys. The machine account must be used to decrypt the Kerberos token/ticket that's obtained from Active Directory and forwarded by the client to the server to authenticate the user. Register the Service Principal Name (SPN) for the host, not the user of the app.
 
+<!-- DOC AUTHOR NOTE
+
+     The following hub.docker.com link is a valid URL, 
+     but the build system throws a broken link error 
+     because the page returns with various 400-series 
+     errors. Therefore, the link is code-fenced.
+-->
+
 > [!NOTE]
-> HTTP.sys isn't supported on Nano Server version 1709 or later. To use Windows Authentication and HTTP.sys with Nano Server, use a [Server Core (microsoft/windowsservercore) container](https://hub.docker.com/r/microsoft/windowsservercore/). For more information on Server Core, see [What is the Server Core installation option in Windows Server?](/windows-server/administration/server-core/what-is-server-core).
+> HTTP.sys isn't supported on Nano Server version 1709 or later. To use Windows Authentication and HTTP.sys with Nano Server, use a Server Core (microsoft/windowsservercore) container (see `https://hub.docker.com/_/microsoft-windows-servercore`). For more information on Server Core, see [What is the Server Core installation option in Windows Server?](/windows-server/administration/server-core/what-is-server-core).
 
 ## Authorize users
 
@@ -206,26 +279,26 @@ The configuration state of anonymous access determines the way in which the [`[A
 
 ### Disallow anonymous access
 
-When Windows Authentication is enabled and anonymous access is disabled, the [[`[Authorize]`](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute)](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute) and [`[AllowAnonymous]`](xref:Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute) attributes have no effect. If an IIS site is configured to disallow anonymous access, the request never reaches the app. For this reason, the [`[AllowAnonymous]`](xref:Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute) attribute isn't applicable.
+When Windows Authentication is enabled and anonymous access is disabled, the [`[Authorize]`](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute) and [`[AllowAnonymous]`](xref:Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute) attributes have no effect. If an IIS site is configured to disallow anonymous access, the request never reaches the app. For this reason, the [`[AllowAnonymous]`](xref:Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute) attribute isn't applicable.
 
 ### Allow anonymous access
 
-When both Windows Authentication and anonymous access are enabled, use the [[`[Authorize]`](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute)](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute) and [`[AllowAnonymous]`](xref:Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute) attributes. The [[`[Authorize]`](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute)](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute) attribute allows you to secure endpoints of the app which require authentication. The [`[AllowAnonymous]`](xref:Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute) attribute overrides the [`[Authorize]`](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute) attribute in apps that allow anonymous access. For attribute usage details, see <xref:security/authorization/simple>.
+When both Windows Authentication and anonymous access are enabled, use the [`[Authorize]`](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute) and [`[AllowAnonymous]`](xref:Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute) attributes. The [`[Authorize]`](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute) attribute allows you to secure endpoints of the app which require authentication. The [`[AllowAnonymous]`](xref:Microsoft.AspNetCore.Authorization.AllowAnonymousAttribute) attribute overrides the [`[Authorize]`](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute) attribute in apps that allow anonymous access. For attribute usage details, see <xref:security/authorization/simple>.
 
 > [!NOTE]
 > By default, users who lack authorization to access a page are presented with an empty HTTP 403 response. The [StatusCodePages Middleware](xref:fundamentals/error-handling#usestatuscodepages) can be configured to provide users with a better "Access Denied" experience.
 
 ## Impersonation
 
-ASP.NET Core doesn't implement impersonation. Apps run with the app's identity for all requests, using app pool or process identity. If the app should perform an action on behalf of a user, use [WindowsIdentity.RunImpersonated](xref:System.Security.Principal.WindowsIdentity.RunImpersonated*) or <xref:System.Security.Principal.WindowsIdentity.RunImpersonatedAsync%2A> in a [terminal inline middleware](xref:fundamentals/middleware/index#create-a-middleware-pipeline-with-iapplicationbuilder) in `Startup.Configure`. Run a single action in this context and then close the context.
+ASP.NET Core doesn't implement impersonation. Apps run with the app's identity for all requests, using app pool or process identity. If the app should perform an action on behalf of a user, use <xref:System.Security.Principal.WindowsIdentity.RunImpersonated%2A?displayProperty=nameWithType> or <xref:System.Security.Principal.WindowsIdentity.RunImpersonatedAsync%2A> in a [terminal inline middleware](xref:fundamentals/middleware/index#create-a-middleware-pipeline-with-iapplicationbuilder) in `Program.cs`. Run a single action in this context and then close the context.
 
 [!code-csharp[](windowsauth/6.0samples/WebRPwinAuth/Program.cs?name=snippet_imp&highlight=10-19)]
 
-While the [Microsoft.AspNetCore.Authentication.Negotiate](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Negotiate) package enables authentication on Windows, Linux, and macOS, impersonation is only supported on Windows.
+While the [`Microsoft.AspNetCore.Authentication.Negotiate` package](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Negotiate) enables authentication on Windows, Linux, and macOS, impersonation is only supported on Windows.
 
 ## Claims transformations
 
-When hosting with IIS, <xref:Microsoft.AspNetCore.Authentication.AuthenticationService.AuthenticateAsync*> isn't called internally to initialize a user. Therefore, an <xref:Microsoft.AspNetCore.Authentication.IClaimsTransformation> implementation used to transform claims after every authentication isn't activated by default. For more information and a code example that activates claims transformations, see <xref:host-and-deploy/aspnet-core-module#in-process-hosting-model>.
+When hosting with IIS, <xref:Microsoft.AspNetCore.Authentication.AuthenticationService.AuthenticateAsync%2A> isn't called internally to initialize a user. Therefore, an <xref:Microsoft.AspNetCore.Authentication.IClaimsTransformation> implementation used to transform claims after every authentication isn't activated by default. For more information and a code example that activates claims transformations, see [Differences between in-process and out-of-process hosting](xref:host-and-deploy/iis/in-process-hosting#differences-between-in-process-and-out-of-process-hosting).
 
 ## Additional resources
 
@@ -234,16 +307,57 @@ When hosting with IIS, <xref:Microsoft.AspNetCore.Authentication.AuthenticationS
 * <xref:host-and-deploy/aspnet-core-module>
 * <xref:host-and-deploy/visual-studio-publish-profiles>
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range="< aspnetcore-6.0"
+:::moniker range="< aspnetcore-6.0"
 
 Windows Authentication (also known as Negotiate, Kerberos, or NTLM authentication) can be configured for ASP.NET Core apps hosted with [IIS](xref:host-and-deploy/iis/index), [Kestrel](xref:fundamentals/servers/kestrel), or [HTTP.sys](xref:fundamentals/servers/httpsys).
 
 Windows Authentication relies on the operating system to authenticate users of ASP.NET Core apps. You can use Windows Authentication when your server runs on a corporate network using Active Directory domain identities or Windows accounts to identify users. Windows Authentication is best suited to intranet environments where users, client apps, and web servers belong to the same Windows domain.
 
+## When to use Windows Authentication
+
+Windows Authentication is suitable for web applications that operate within an organization's private internal network, accessible only to employees (and other authorized users) within the same network. The user management is done within Active Directory (AD), and users use their existing Windows domain account to authenticate.
+
+Windows Authentication provides several benefits for intranet applications:
+
+* **Seamless user experience** - Users are automatically authenticated based on their active Windows session, or are prompted to enter their Windows credentials via a standard browser dialog box.
+* **Integration with Active Directory** - Leverages existing Windows infrastructure and security policies, including user groups, account lockouts, and multi-factor authentication (MFA).
+* **Secure credential handling** - Authentication is handled through secure protocols like Kerberos, with no need to manage separate user credentials.
+* **Role-based authorization** - Applications can access user and group information from Active Directory, enabling role-based access control (RBAC) within the application.
+* **Reduced administrative overhead** - No need to maintain a separate user database or credential management system.
+
+This makes Windows Authentication ideal for organizations that want to make use of their existing Windows infrastructure, such as intranet portals.
+
 > [!NOTE]
-> Windows Authentication isn't supported with HTTP/2. Authentication challenges can be sent on HTTP/2 responses, but the client must downgrade to HTTP/1.1 before authenticating.
+> Windows Authentication isn't supported with HTTP/2. While authentication challenges can be sent over HTTP/2 responses, the client must downgrade to HTTP/1.1 to complete the authentication process. This is a protocol limitation, not a deprecation of Windows Authentication. Once authenticated, normal HTTP/2 communication can resume for subsequent requests.
+
+For public-facing applications Windows Authentication isn't recommended due to security and usability concerns.
+These reasons include:
+* Windows Authentication is best kept internal to protect Active Directory, exposing it outside an internal network introduces security risks.
+* External users don't have Windows domain accounts.
+* It's complex to configure the necessary network infrastructure securely, and firewalls or proxies may interfere with the authentication process.
+* It's not cross-platform and doesn't provide customization options for designs and user experiences.
+
+### Alternatives for different scenarios
+
+Depending on your application requirements, consider these alternatives:
+
+**For public-facing applications:**
+
+* [OpenID Connect](xref:security/how-to-choose-identity) with external identity providers
+* ASP.NET Core Identity with local user accounts (<xref:security/authentication/identity>)
+* Azure Active Directory (AAD) for Microsoft 365 environments
+
+**For mixed environments** with both intranet and external users:
+
+* Active Directory Federation Services (ADFS) with OpenID Connect
+* Azure Active Directory with hybrid configuration
+
+**For corporate environments using modern authentication:**
+
+* Azure Active Directory with single sign-on
+* SAML-based solutions with third-party identity providers
 
 ## Proxy and load balancer scenarios
 
@@ -256,7 +370,7 @@ An alternative to Windows Authentication in environments where proxies and load 
 
 ## IIS/IIS Express
 
-Add authentication services by invoking <xref:Microsoft.Extensions.DependencyInjection.AuthenticationServiceCollectionExtensions.AddAuthentication*> (<xref:Microsoft.AspNetCore.Server.IISIntegration?displayProperty=fullName> namespace) in `Startup.ConfigureServices`:
+Add authentication services by invoking <xref:Microsoft.Extensions.DependencyInjection.AuthenticationServiceCollectionExtensions.AddAuthentication%2A> (<xref:Microsoft.AspNetCore.Server.IISIntegration?displayProperty=fullName> namespace) in `Startup.ConfigureServices`:
 
 ```csharp
 services.AddAuthentication(IISDefaults.AuthenticationScheme);
@@ -264,9 +378,9 @@ services.AddAuthentication(IISDefaults.AuthenticationScheme);
 
 ### Launch settings (debugger)
 
-Configuration for launch settings only affects the *Properties/launchSettings.json* file for IIS Express and doesn't configure IIS for Windows Authentication. Server configuration is explained in the [IIS](#iis) section.
+Configuration for launch settings only affects the `Properties/launchSettings.json` file for IIS Express and doesn't configure IIS for Windows Authentication. Server configuration is explained in the [IIS](#iis) section.
 
-The **Web Application** template available via Visual Studio or the .NET Core CLI can be configured to support Windows Authentication, which updates the *Properties/launchSettings.json* file automatically.
+The **Web Application** template available via Visual Studio or the .NET CLI can be configured to support Windows Authentication, which updates the `Properties/launchSettings.json` file automatically.
 
 # [Visual Studio](#tab/visual-studio)
 
@@ -292,11 +406,11 @@ The project's properties enable Windows Authentication and disable Anonymous Aut
 1. Select the checkbox for **Enable Windows Authentication**.
 1. Save and close the property page.
 
-Alternatively, the properties can be configured in the `iisSettings` node of the *launchSettings.json* file:
+Alternatively, the properties can be configured in the `iisSettings` node of the `launchSettings.json` file:
 
 [!code-json[](windowsauth/sample_snapshot/launchSettings.json?highlight=2-3)]
 
-# [.NET Core CLI](#tab/netcore-cli)
+# [.NET CLI](#tab/net-cli)
 
 **New project**
 
@@ -308,13 +422,13 @@ dotnet new webapp --auth Windows
 
 **Existing project**
 
-Update the `iisSettings` node of the *launchSettings.json* file:
+Update the `iisSettings` node of the `launchSettings.json` file:
 
 [!code-json[](windowsauth/sample_snapshot/launchSettings.json?highlight=2-3)]
 
 ---
 
-When modifying an existing project, confirm that the project file includes a package reference for the [Microsoft.AspNetCore.App metapackage](xref:fundamentals/metapackage-app) **or** the [Microsoft.AspNetCore.Authentication](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication/) NuGet package.
+When modifying an existing project, confirm that the project file includes a package reference for the [`Microsoft.AspNetCore.App` metapackage](xref:fundamentals/metapackage-app) **or** the [`Microsoft.AspNetCore.Authentication` NuGet package](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication/).
 
 ### IIS
 
@@ -337,7 +451,7 @@ Use **either** of the following approaches:
 
   [!code-xml[](windowsauth/sample_snapshot/web_2.config)]
 
-  When the project is published by the .NET Core SDK (without the `<IsTransformWebConfigDisabled>` property set to `true` in the project file), the published *web.config* file includes the `<location><system.webServer><security><authentication>` section. For more information on the `<IsTransformWebConfigDisabled>` property, see <xref:host-and-deploy/iis/index#webconfig-file>.
+  When the project is published by the .NET SDK (without the `<IsTransformWebConfigDisabled>` property set to `true` in the project file), the published *web.config* file includes the `<location><system.webServer><security><authentication>` section. For more information on the `<IsTransformWebConfigDisabled>` property, see <xref:host-and-deploy/iis/index#webconfig-file>.
 
 * **After publishing and deploying the project,** perform server-side configuration with the IIS Manager:
 
@@ -350,7 +464,7 @@ Use **either** of the following approaches:
 
   [!code-xml[](windowsauth/sample_snapshot/web_1.config?highlight=4-5)]
 
-  The `<system.webServer>` section added to the *web.config* file by IIS Manager is outside of the app's `<location>` section added by the .NET Core SDK when the app is published. Because the section is added outside of the `<location>` node, the settings are inherited by any [sub-apps](xref:host-and-deploy/iis/index#sub-applications) to the current app. To prevent inheritance, move the added `<security>` section inside of the `<location><system.webServer>` section that the .NET Core SDK provided.
+  The `<system.webServer>` section added to the *web.config* file by IIS Manager is outside of the app's `<location>` section added by the .NET SDK when the app is published. Because the section is added outside of the `<location>` node, the settings are inherited by any [sub-apps](xref:host-and-deploy/iis/index#sub-applications) to the current app. To prevent inheritance, move the added `<security>` section inside of the `<location><system.webServer>` section that the .NET SDK provided.
 
   When IIS Manager is used to add the IIS configuration, it only affects the app's *web.config* file on the server. A subsequent deployment of the app may overwrite the settings on the server if the server's copy of *web.config* is replaced by the project's *web.config* file. Use **either** of the following approaches to manage the settings:
 
@@ -359,7 +473,7 @@ Use **either** of the following approaches:
 
 ## Kestrel
 
-The [Microsoft.AspNetCore.Authentication.Negotiate](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Negotiate) NuGet package can be used with [Kestrel](xref:fundamentals/servers/kestrel) to support Windows Authentication using Negotiate and Kerberos on Windows, Linux, and macOS.
+The [`Microsoft.AspNetCore.Authentication.Negotiate` NuGet package](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Negotiate) can be used with [Kestrel](xref:fundamentals/servers/kestrel) to support Windows Authentication using Negotiate and Kerberos on Windows, Linux, and macOS.
 
 > [!WARNING]
 > Credentials can be persisted across requests on a connection. *Negotiate authentication must not be used with proxies unless the proxy maintains a 1:1 connection affinity (a persistent connection) with Kestrel.*
@@ -367,7 +481,7 @@ The [Microsoft.AspNetCore.Authentication.Negotiate](https://www.nuget.org/packag
 > [!NOTE]
 > The Negotiate handler detects if the underlying server supports Windows Authentication natively and if it is enabled. If the server supports Windows Authentication but it is disabled, an error is thrown asking you to enable the server implementation. When Windows Authentication is enabled in the server, the Negotiate handler transparently forwards authentication requests to it.
 
-Add authentication services by invoking <xref:Microsoft.Extensions.DependencyInjection.AuthenticationServiceCollectionExtensions.AddAuthentication*> and <xref:Microsoft.Extensions.DependencyInjection.NegotiateExtensions.AddNegotiate*> in `Startup.ConfigureServices`:
+Add authentication services by invoking <xref:Microsoft.Extensions.DependencyInjection.AuthenticationServiceCollectionExtensions.AddAuthentication%2A> and <xref:Microsoft.Extensions.DependencyInjection.NegotiateExtensions.AddNegotiate%2A> in `Startup.ConfigureServices`:
 
  ```csharp
 // using Microsoft.AspNetCore.Authentication.Negotiate;
@@ -377,7 +491,7 @@ services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
     .AddNegotiate();
 ```
 
-Add Authentication Middleware by calling <xref:Microsoft.AspNetCore.Builder.AuthAppBuilderExtensions.UseAuthentication*> in `Startup.Configure`:
+Add Authentication Middleware by calling <xref:Microsoft.AspNetCore.Builder.AuthAppBuilderExtensions.UseAuthentication%2A> in `Startup.Configure`:
 
  ```csharp
 app.UseAuthentication();
@@ -409,18 +523,18 @@ By default, the negotiate authentication handler resolves nested domains. In a l
 
 Anonymous requests are allowed. Use [ASP.NET Core Authorization](xref:security/authorization/introduction) to challenge anonymous requests for authentication.
 
-<xref:Microsoft.AspNetCore.Authentication.Negotiate.NegotiateDefaults.AuthenticationScheme> requires the NuGet package [Microsoft.AspNetCore.Authentication.Negotiate](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Negotiate).
+<xref:Microsoft.AspNetCore.Authentication.Negotiate.NegotiateDefaults.AuthenticationScheme> requires the [`Microsoft.AspNetCore.Authentication.Negotiate` NuGet package](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Negotiate).
 
 ### Windows environment configuration
 
-The [Microsoft.AspNetCore.Authentication.Negotiate](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Negotiate) component performs [User Mode](/windows-hardware/drivers/gettingstarted/user-mode-and-kernel-mode) authentication. Service Principal Names (SPNs) must be added to the user account running the service, not the machine account. Execute `setspn -S HTTP/myservername.mydomain.com myuser` in an administrative command shell.
+The [`Microsoft.AspNetCore.Authentication.Negotiate` API](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Negotiate) performs [User Mode](/windows-hardware/drivers/gettingstarted/user-mode-and-kernel-mode) authentication. Service Principal Names (SPNs) must be added to the user account running the service, not the machine account. Execute `setspn -S HTTP/myservername.mydomain.com myuser` in an administrative command shell.
 
 ### Linux and macOS environment configuration
 
-Instructions for joining a Linux or macOS machine to a Windows domain are available in the [Connect Azure Data Studio to your SQL Server using Windows authentication - Kerberos](/sql/azure-data-studio/enable-kerberos?view=sql-server-2017#join-your-os-to-the-active-directory-domain-controller&preserve-view=true ) article. The instructions create a machine account for the Linux machine on the domain. SPNs must be added to that machine account.
+Instructions for joining a Linux or macOS machine to a Windows domain are available in the [Connect Azure Data Studio to your SQL Server using Windows authentication - Kerberos](/sql/azure-data-studio/enable-kerberos?view=sql-server-2017#join-your-os-to-the-active-directory-domain-controller&preserve-view=true) article. The instructions create a machine account for the Linux machine on the domain. SPNs must be added to that machine account.
 
 > [!NOTE]
-> When following the guidance in the [Connect Azure Data Studio to your SQL Server using Windows authentication - Kerberos](/sql/azure-data-studio/enable-kerberos?view=sql-server-2017#join-your-os-to-the-active-directory-domain-controller&preserve-view=true ) article, replace `python-software-properties` with `python3-software-properties` if needed.
+> When following the guidance in the [Connect Azure Data Studio to your SQL Server using Windows authentication - Kerberos](/sql/azure-data-studio/enable-kerberos?view=sql-server-2017#join-your-os-to-the-active-directory-domain-controller&preserve-view=true) article, replace `python-software-properties` with `python3-software-properties` if needed.
 
 Once the Linux or macOS machine is joined to the domain, additional steps are required to provide a [keytab file](/archive/blogs/pie/all-you-need-to-know-about-keytab-files) with the SPNs:
 
@@ -441,21 +555,29 @@ Once the Linux or macOS machine is joined to the domain, additional steps are re
 
 [HTTP.sys](xref:fundamentals/servers/httpsys) supports [Kernel Mode](/windows-hardware/drivers/gettingstarted/user-mode-and-kernel-mode) Windows Authentication using Negotiate, NTLM, or Basic authentication.
 
-Add authentication services by invoking <xref:Microsoft.Extensions.DependencyInjection.AuthenticationServiceCollectionExtensions.AddAuthentication*> (<xref:Microsoft.AspNetCore.Server.HttpSys?displayProperty=fullName> namespace) in `Startup.ConfigureServices`:
+Add authentication services by invoking <xref:Microsoft.Extensions.DependencyInjection.AuthenticationServiceCollectionExtensions.AddAuthentication%2A> (<xref:Microsoft.AspNetCore.Server.HttpSys?displayProperty=fullName> namespace) in `Startup.ConfigureServices`:
 
 ```csharp
 services.AddAuthentication(HttpSysDefaults.AuthenticationScheme);
 ```
 
-Configure the app's web host to use HTTP.sys with Windows Authentication (*Program.cs*). <xref:Microsoft.AspNetCore.Hosting.WebHostBuilderHttpSysExtensions.UseHttpSys*> is in the <xref:Microsoft.AspNetCore.Server.HttpSys?displayProperty=fullName> namespace.
+Configure the app's web host to use HTTP.sys with Windows Authentication (`Program.cs`). <xref:Microsoft.AspNetCore.Hosting.WebHostBuilderHttpSysExtensions.UseHttpSys%2A> is in the <xref:Microsoft.AspNetCore.Server.HttpSys?displayProperty=fullName> namespace.
 
 [!code-csharp[](windowsauth/sample_snapshot/Program_GenericHost.cs?highlight=13-19)]
 
 > [!NOTE]
 > HTTP.sys delegates to [Kernel Mode](/windows-hardware/drivers/gettingstarted/user-mode-and-kernel-mode) authentication with the Kerberos authentication protocol. [User Mode](/windows-hardware/drivers/gettingstarted/user-mode-and-kernel-mode) authentication isn't supported with Kerberos and HTTP.sys. The machine account must be used to decrypt the Kerberos token/ticket that's obtained from Active Directory and forwarded by the client to the server to authenticate the user. Register the Service Principal Name (SPN) for the host, not the user of the app.
 
+<!-- DOC AUTHOR NOTE
+
+     The following hub.docker.com link is a valid URL, 
+     but the build system throws a broken link error 
+     because the page returns with various 400-series 
+     errors. Therefore, the link is code-fenced.
+-->
+
 > [!NOTE]
-> HTTP.sys isn't supported on Nano Server version 1709 or later. To use Windows Authentication and HTTP.sys with Nano Server, use a [Server Core (microsoft/windowsservercore) container](https://hub.docker.com/r/microsoft/windowsservercore/). For more information on Server Core, see [What is the Server Core installation option in Windows Server?](/windows-server/administration/server-core/what-is-server-core).
+> HTTP.sys isn't supported on Nano Server version 1709 or later. To use Windows Authentication and HTTP.sys with Nano Server, use a Server Core (microsoft/windowsservercore) container (see `https://hub.docker.com/_/microsoft-windows-servercore`). For more information on Server Core, see [What is the Server Core installation option in Windows Server?](/windows-server/administration/server-core/what-is-server-core).
 
 ## Authorize users
 
@@ -478,11 +600,11 @@ ASP.NET Core doesn't implement impersonation. Apps run with the app's identity f
 
 [!code-csharp[](windowsauth/sample_snapshot/Startup.cs?highlight=10-19)]
 
-While the [Microsoft.AspNetCore.Authentication.Negotiate](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Negotiate) package enables authentication on Windows, Linux, and macOS, impersonation is only supported on Windows.
+While the [`Microsoft.AspNetCore.Authentication.Negotiate` package](https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Negotiate) enables authentication on Windows, Linux, and macOS, impersonation is only supported on Windows.
 
 ## Claims transformations
 
-When hosting with IIS, <xref:Microsoft.AspNetCore.Authentication.AuthenticationService.AuthenticateAsync*> isn't called internally to initialize a user. Therefore, an <xref:Microsoft.AspNetCore.Authentication.IClaimsTransformation> implementation used to transform claims after every authentication isn't activated by default. For more information and a code example that activates claims transformations, see <xref:host-and-deploy/aspnet-core-module#in-process-hosting-model>.
+When hosting with IIS, <xref:Microsoft.AspNetCore.Authentication.AuthenticationService.AuthenticateAsync%2A> isn't called internally to initialize a user. Therefore, an <xref:Microsoft.AspNetCore.Authentication.IClaimsTransformation> implementation used to transform claims after every authentication isn't activated by default. For more information and a code example that activates claims transformations, see [Differences between in-process and out-of-process hosting](xref:host-and-deploy/iis/in-process-hosting#differences-between-in-process-and-out-of-process-hosting).
 
 ## Additional resources
 
@@ -491,4 +613,4 @@ When hosting with IIS, <xref:Microsoft.AspNetCore.Authentication.AuthenticationS
 * <xref:host-and-deploy/aspnet-core-module>
 * <xref:host-and-deploy/visual-studio-publish-profiles>
 
-::: moniker-end
+:::moniker-end
