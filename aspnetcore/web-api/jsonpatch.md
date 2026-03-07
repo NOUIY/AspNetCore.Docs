@@ -1,243 +1,315 @@
 ---
 title: JsonPatch in ASP.NET Core web API
-author: rick-anderson
+author: wadepickett
 description: Learn how to handle JSON Patch requests in an ASP.NET Core web API.
-ms.author: riande
+monikerRange: '>= aspnetcore-3.1'
+ms.author: wpickett
 ms.custom: mvc
-ms.date: 04/02/2020
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.date: 06/03/2025
 uid: web-api/jsonpatch
 ---
+# JSON Patch support in ASP.NET Core web API
 
-# JsonPatch in ASP.NET Core web API
-
-By [Tom Dykstra](https://github.com/tdykstra) and [Kirk Larkin](https://github.com/serpent5)
-
-::: moniker range=">= aspnetcore-3.0"
+:::moniker range=">= aspnetcore-10.0"
 
 This article explains how to handle JSON Patch requests in an ASP.NET Core web API.
 
-## Package installation
+JSON Patch support in ASP.NET Core web API is based on <xref:System.Text.Json> serialization, and requires the [`Microsoft.AspNetCore.JsonPatch.SystemTextJson`](https://www.nuget.org/packages/Microsoft.AspNetCore.JsonPatch.SystemTextJson) NuGet package. 
 
-To enable JSON Patch support in your app, complete the following steps:
+## What is the JSON Patch standard?
 
-1. Install the [`Microsoft.AspNetCore.Mvc.NewtonsoftJson`](https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.NewtonsoftJson/) NuGet package.
-1. Update the project's `Startup.ConfigureServices` method to call <xref:Microsoft.Extensions.DependencyInjection.NewtonsoftJsonMvcBuilderExtensions.AddNewtonsoftJson*>. For example:
+The JSON Patch standard:
 
-    ```csharp
-    services
-        .AddControllersWithViews()
-        .AddNewtonsoftJson();
-    ```
+* Is a standard format for describing changes to apply to a JSON document.
+* Is defined in [RFC 6902](https://datatracker.ietf.org/doc/html/rfc6902) and is widely used in RESTful APIs to perform partial updates to JSON resources.
+* Describes a sequence of operations that modify a JSON document such as:
+  
+  * `add`
+  * `remove`
+  * `replace`
+  * `move`
+  * `copy`
+  * `test`
 
-`AddNewtonsoftJson` is compatible with the MVC service registration methods:
+In web apps, JSON Patch is commonly used in a PATCH operation to perform partial updates of a resource. Rather than sending the entire resource for an update, clients can send a JSON Patch document containing only the changes. Patching reduces payload size and improves efficiency.
 
-* <xref:Microsoft.Extensions.DependencyInjection.MvcServiceCollectionExtensions.AddRazorPages*>
-* <xref:Microsoft.Extensions.DependencyInjection.MvcServiceCollectionExtensions.AddControllersWithViews*>
-* <xref:Microsoft.Extensions.DependencyInjection.MvcServiceCollectionExtensions.AddControllers*>
+For an overview of the JSON Patch standard, see [jsonpatch.com](https://jsonpatch.com/).
 
-## JSON Patch, AddNewtonsoftJson, and System.Text.Json
+## JSON Patch support in ASP.NET Core web API
 
-`AddNewtonsoftJson` replaces the `System.Text.Json`-based input and output formatters used for formatting **all** JSON content. To add support for JSON Patch using `Newtonsoft.Json`, while leaving the other formatters unchanged, update the project's `Startup.ConfigureServices` method as follows:
+JSON Patch support in ASP.NET Core web API is based on <xref:System.Text.Json> serialization, starting with .NET 10, implementing <xref:Microsoft.AspNetCore.JsonPatch> based on <xref:System.Text.Json> serialization. This feature:
 
-[!code-csharp[](jsonpatch/samples/3.0/WebApp1/Startup.cs?name=snippet)]
+* Requires the [`Microsoft.AspNetCore.JsonPatch.SystemTextJson`](https://www.nuget.org/packages/Microsoft.AspNetCore.JsonPatch.SystemTextJson) NuGet package. 
+* Aligns with modern .NET practices by leveraging the <xref:System.Text.Json> library, which is optimized for .NET.
+* Provides improved performance and reduced memory usage compared to the legacy `Newtonsoft.Json`-based implementation. For more information on the legacy `Newtonsoft.Json`-based implementation, see the [.NET 9 version of this article](?view=aspnetcore-9.0&preserve-view=true).
 
-The preceding code requires the `Microsoft.AspNetCore.Mvc.NewtonsoftJson` package and the following `using` statements:
+> [!NOTE]
+> The implementation of <xref:Microsoft.AspNetCore.JsonPatch> based on <xref:System.Text.Json?displayProperty=fullName> serialization isn't a drop-in replacement for the legacy `Newtonsoft.Json`-based implementation. It doesn't support dynamic types, for example <xref:System.Dynamic.ExpandoObject>.
 
-[!code-csharp[](jsonpatch/samples/3.0/WebApp1/Startup.cs?name=snippet1)]
+> [!IMPORTANT]
+> The JSON Patch standard has ***inherent security risks***. Since these risks are inherent to the JSON Patch standard, the ASP.NET Core implementation ***doesn't attempt to mitigate inherent security risks***. It's the responsibility of the developer to ensure that the JSON Patch document is safe to apply to the target object. For more information, see the [Mitigating Security Risks](#mitigating-security-risks) section.
 
-Use the `Newtonsoft.Json.JsonConvert.SerializeObject` method to serialize a JsonPatchDocument.
+## Enable JSON Patch support with <xref:System.Text.Json>
 
-## PATCH HTTP request method
+To enable JSON Patch support with <xref:System.Text.Json>, install the [`Microsoft.AspNetCore.JsonPatch.SystemTextJson`](https://www.nuget.org/packages/Microsoft.AspNetCore.JsonPatch.SystemTextJson) NuGet package.
 
-The PUT and [PATCH](https://tools.ietf.org/html/rfc5789) methods are used to update an existing resource. The difference between them is that PUT replaces the entire resource, while PATCH specifies only the changes.
+```dotnetcli
+dotnet add package Microsoft.AspNetCore.JsonPatch.SystemTextJson --prerelease
+```
 
-## JSON Patch
+This package provides a <xref:Microsoft.AspNetCore.JsonPatch.SystemTextJson.JsonPatchDocument%601> class to represent a JSON Patch document for objects of type `T` and custom logic for serializing and deserializing JSON Patch documents using <xref:System.Text.Json>. The key method of the <xref:Microsoft.AspNetCore.JsonPatch.SystemTextJson.JsonPatchDocument%601> class is <xref:Microsoft.AspNetCore.JsonPatch.SystemTextJson.JsonPatchDocument.ApplyTo(System.Object)>, which applies the patch operations to a target object of type `T`.
 
-[JSON Patch](https://tools.ietf.org/html/rfc6902) is a format for specifying updates to be applied to a resource. A JSON Patch document has an array of *operations*. Each operation identifies a particular type of change. Examples of such changes include adding an array element or replacing a property value.
+## Action method code applying JSON Patch
 
-For example, the following JSON documents represent a resource, a JSON Patch document for the resource, and the result of applying the Patch operations.
+In an API controller, an action method for JSON Patch:
 
-### Resource example
+* Is annotated with the <xref:Microsoft.AspNetCore.Mvc.HttpPatchAttribute> attribute.
+* Accepts a <xref:Microsoft.AspNetCore.JsonPatch.SystemTextJson.JsonPatchDocument%601>, typically with [<xref:Microsoft.AspNetCore.Mvc.FromBodyAttribute>](xref:Microsoft.AspNetCore.Mvc.FromBodyAttribute).
+* Calls <xref:Microsoft.AspNetCore.JsonPatch.SystemTextJson.JsonPatchDocument.ApplyTo(System.Object)> on the patch document to apply the changes.
 
-[!code-json[](jsonpatch/samples/2.2/JSON/customer.json)]
+### Example Controller Action method:
 
-### JSON patch example
+:::code language="csharp" source="~/web-api/jsonpatch/samples/10.x/JsonPatchSample/Controllers/CustomerController.cs" id="snippet_PatchAction" highlight="1,2,14-19":::
 
-[!code-json[](jsonpatch/samples/2.2/JSON/add.json)]
+This code from the sample app works with the following `Customer` and `Order` models:
 
-In the preceding JSON:
+:::code language="csharp" source="~/web-api/jsonpatch/samples/10.x/JsonPatchSample/Models/Customer.cs":::
 
-* The `op` property indicates the type of operation.
-* The `path` property indicates the element to update.
-* The `value` property provides the new value.
+:::code language="csharp" source="~/web-api/jsonpatch/samples/10.x/JsonPatchSample/Models/Order.cs":::
 
-### Resource after patch
+The sample action method's key steps:
 
-Here's the resource after applying the preceding JSON Patch document:
+* **Retrieve the Customer**:
+  * The method retrieves a `Customer` object from the database `AppDb` using the provided id.
+  * If no `Customer` object is found, it returns a `404 Not Found` response.
+* **Apply JSON Patch**:
+  * The <xref:Microsoft.AspNetCore.JsonPatch.SystemTextJson.JsonPatchDocument.ApplyTo(System.Object)> method applies the JSON Patch operations from the patchDoc to the retrieved `Customer` object.
+  * If errors occur during the patch application, such as invalid operations or conflicts, they are captured by an error handling delegate. This delegate adds error messages to the `ModelState` using the type name of the affected object and the error message.
+* **Validate ModelState**:
+  * After applying the patch, the method checks the `ModelState` for errors.
+  * If the `ModelState` is invalid, such as due to patch errors, it returns a `400 Bad Request` response with the validation errors.
+* **Return the Updated Customer**:
+  * If the patch is successfully applied and the `ModelState` is valid, the method returns the updated `Customer` object in the response.
+
+### Example error response:
+
+The following example shows the body of a `400 Bad Request` response for a JSON Patch operation when the specified path is invalid:
 
 ```json
 {
-  "customerName": "Barry",
-  "orders": [
-    {
-      "orderName": "Order0",
-      "orderType": null
-    },
-    {
-      "orderName": "Order1",
-      "orderType": null
-    },
-    {
-      "orderName": "Order2",
-      "orderType": null
-    }
+  "Customer": [
+    "The target location specified by path segment 'foobar' was not found."
   ]
 }
 ```
 
-The changes made by applying a JSON Patch document to a resource are atomic. If any operation in the list fails, no operation in the list is applied.
+## Apply a JSON Patch document to an object
 
-## Path syntax
+The following examples demonstrate how to use the <xref:Microsoft.AspNetCore.JsonPatch.SystemTextJson.JsonPatchDocument.ApplyTo(System.Object)> method to apply a JSON Patch document to an object.
 
-The [path](https://tools.ietf.org/html/rfc6901) property of an operation object has slashes between levels. For example, `"/address/zipCode"`.
+### Example: Apply a <xref:Microsoft.AspNetCore.JsonPatch.SystemTextJson.JsonPatchDocument%601> to an object
 
-Zero-based indexes are used to specify array elements. The first element of the `addresses` array would be at `/addresses/0`. To `add` to the end of an array, use a hyphen (`-`) rather than an index number: `/addresses/-`.
+The following example demonstrates:
 
-### Operations
+* The `add`, `replace`, and `remove` operations.
+* Operations on nested properties.
+* Adding a new item to an array.
+* Using a JSON String Enum Converter in a JSON patch document.
 
-The following table shows supported operations as defined in the [JSON Patch specification](https://tools.ietf.org/html/rfc6902):
+```csharp
+// Original object
+var person = new Person {
+    FirstName = "John",
+    LastName = "Doe",
+    Email = "johndoe@gmail.com",
+    PhoneNumbers = [new() {Number = "123-456-7890", Type = PhoneNumberType.Mobile}],
+    Address = new Address
+    {
+        Street = "123 Main St",
+        City = "Anytown",
+        State = "TX"
+    }
+};
 
-|Operation  | Notes |
-|-----------|--------------------------------|
-| `add`     | Add a property or array element. For existing property: set value.|
-| `remove`  | Remove a property or array element. |
-| `replace` | Same as `remove` followed by `add` at same location. |
-| `move`    | Same as `remove` from source followed by `add` to destination using value from source. |
-| `copy`    | Same as `add` to destination using value from source. |
-| `test`    | Return success status code if value at `path` = provided `value`.|
+// Raw JSON patch document
+string jsonPatch = """
+[
+    { "op": "replace", "path": "/FirstName", "value": "Jane" },
+    { "op": "remove", "path": "/Email"},
+    { "op": "add", "path": "/Address/ZipCode", "value": "90210" },
+    { "op": "add", "path": "/PhoneNumbers/-", "value": { "Number": "987-654-3210",
+                                                                "Type": "Work" } }
+]
+""";
 
-## JSON Patch in ASP.NET Core
+// Deserialize the JSON patch document
+var patchDoc = JsonSerializer.Deserialize<JsonPatchDocument<Person>>(jsonPatch);
 
-The ASP.NET Core implementation of JSON Patch is provided in the [Microsoft.AspNetCore.JsonPatch](https://www.nuget.org/packages/microsoft.aspnetcore.jsonpatch/) NuGet package.
+// Apply the JSON patch document
+patchDoc!.ApplyTo(person);
 
-## Action method code
+// Output updated object
+Console.WriteLine(JsonSerializer.Serialize(person, serializerOptions));
+```
 
-In an API controller, an action method for JSON Patch:
+The previous example results in the following output of the updated object:
 
-* Is annotated with the `HttpPatch` attribute.
-* Accepts a `JsonPatchDocument<T>`, typically with `[FromBody]`.
-* Calls `ApplyTo` on the patch document to apply the changes.
-
-Here's an example:
-
-[!code-csharp[](jsonpatch/samples/2.2/Controllers/HomeController.cs?name=snippet_PatchAction&highlight=1,3,9)]
-
-This code from the sample app works with the following `Customer` model:
-
-[!code-csharp[](jsonpatch/samples/2.2/Models/Customer.cs?name=snippet_Customer)]
-
-[!code-csharp[](jsonpatch/samples/2.2/Models/Order.cs?name=snippet_Order)]
-
-The sample action method:
-
-* Constructs a `Customer`.
-* Applies the patch.
-* Returns the result in the body of the response.
-
-In a real app, the code would retrieve the data from a store such as a database and update the database after applying the patch.
-
-### Model state
-
-The preceding action method example calls an overload of `ApplyTo` that takes model state as one of its parameters. With this option, you can get error messages in responses. The following example shows the body of a 400 Bad Request response for a `test` operation:
-
-```json
+```output
 {
-    "Customer": [
-        "The current value 'John' at path 'customerName' is not equal to the test value 'Nancy'."
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "address": {
+        "street": "123 Main St",
+        "city": "Anytown",
+        "state": "TX",
+        "zipCode": "90210"
+    },
+    "phoneNumbers": [
+        {
+            "number": "123-456-7890",
+            "type": "Mobile"
+        },
+        {
+            "number": "987-654-3210",
+            "type": "Work"
+        }
     ]
 }
 ```
 
-### Dynamic objects
+The <xref:Microsoft.AspNetCore.JsonPatch.SystemTextJson.JsonPatchDocument.ApplyTo(System.Object)> method generally follows the conventions and options of <xref:System.Text.Json> for processing the <xref:Microsoft.AspNetCore.JsonPatch.SystemTextJson.JsonPatchDocument%601>, including the behavior controlled by the following options:
 
-The following action method example shows how to apply a patch to a dynamic object:
+* <xref:System.Text.Json.Serialization.JsonNumberHandling>: Whether numeric properties are read from strings.
+* <xref:System.Text.Json.JsonSerializerOptions.PropertyNameCaseInsensitive>: Whether property names are case-sensitive.
 
-[!code-csharp[](jsonpatch/samples/2.2/Controllers/HomeController.cs?name=snippet_Dynamic)]
+Key differences between <xref:System.Text.Json> and the new <xref:Microsoft.AspNetCore.JsonPatch.SystemTextJson.JsonPatchDocument%601> implementation:
 
-## The add operation
+* The runtime type of the target object, not the declared type, determines which properties <xref:Microsoft.AspNetCore.JsonPatch.SystemTextJson.JsonPatchDocument.ApplyTo(System.Object)> patches.
+* <xref:System.Text.Json> deserialization relies on the declared type to identify eligible properties.
 
-* If `path` points to an array element: inserts new element before the one specified by `path`.
-* If `path` points to a property: sets the property value.
-* If `path` points to a nonexistent location:
-  * If the resource to patch is a dynamic object: adds a property.
-  * If the resource to patch is a static object: the request fails.
+### Example: Apply a JsonPatchDocument with error handling
 
-The following sample patch document sets the value of `CustomerName` and adds an `Order` object to the end of the `Orders` array.
+There are various errors that can occur when applying a JSON Patch document. For example, the target object may not have the specified property, or the value specified might be incompatible with the property type.
 
-[!code-json[](jsonpatch/samples/2.2/JSON/add.json)]
+JSON `Patch` supports the `test` operation, which checks if a specified value equals the target property. If it doesn't, it returns an error.
 
-## The remove operation
+The following example demonstrates how to handle these errors gracefully.
 
-* If `path` points to an array element: removes the element.
-* If `path` points to a property:
-  * If resource to patch is a dynamic object: removes the property.
-  * If resource to patch is a static object:
-    * If the property is nullable: sets it to null.
-    * If the property is non-nullable, sets it to `default<T>`.
+> [!Important]
+> The object passed to the <xref:Microsoft.AspNetCore.JsonPatch.SystemTextJson.JsonPatchDocument.ApplyTo(System.Object)> method is modified in place. The caller is responsible for discarding changes if any operation fails.
 
-The following sample patch document sets `CustomerName` to null and deletes `Orders[0]`:
+```csharp
+// Original object
+var person = new Person {
+    FirstName = "John",
+    LastName = "Doe",
+    Email = "johndoe@gmail.com"
+};
 
-[!code-json[](jsonpatch/samples/2.2/JSON/remove.json)]
+// Raw JSON patch document
+string jsonPatch = """
+[
+    { "op": "replace", "path": "/Email", "value": "janedoe@gmail.com"},
+    { "op": "test", "path": "/FirstName", "value": "Jane" },
+    { "op": "replace", "path": "/LastName", "value": "Smith" }
+]
+""";
 
-## The replace operation
+// Deserialize the JSON patch document
+var patchDoc = JsonSerializer.Deserialize<JsonPatchDocument<Person>>(jsonPatch);
 
-This operation is functionally the same as a `remove` followed by an `add`.
+// Apply the JSON patch document, catching any errors
+Dictionary<string, string[]>? errors = null;
+patchDoc!.ApplyTo(person, jsonPatchError =>
+    {
+        errors ??= new ();
+        var key = jsonPatchError.AffectedObject.GetType().Name;
+        if (!errors.ContainsKey(key))
+        {
+            errors.Add(key, new string[] { });
+        }
+        errors[key] = errors[key].Append(jsonPatchError.ErrorMessage).ToArray();
+    });
+if (errors != null)
+{
+    // Print the errors
+    foreach (var error in errors)
+    {
+        Console.WriteLine($"Error in {error.Key}: {string.Join(", ", error.Value)}");
+    }
+}
 
-The following sample patch document sets the value of `CustomerName` and replaces `Orders[0]`with a new `Order` object:
+// Output updated object
+Console.WriteLine(JsonSerializer.Serialize(person, serializerOptions));
+```
 
-[!code-json[](jsonpatch/samples/2.2/JSON/replace.json)]
+The previous example results in the following output:
 
-## The move operation
+```output
+Error in Person: The current value 'John' at path 'FirstName' is not equal 
+to the test value 'Jane'.
+{
+    "firstName": "John",
+    "lastName": "Smith",              <<< Modified!
+    "email": "janedoe@gmail.com",     <<< Modified!
+    "phoneNumbers": []
+}
+```
 
-* If `path` points to an array element: copies `from` element to location of `path` element, then runs a `remove` operation on the `from` element.
-* If `path` points to a property: copies value of `from` property to `path` property, then runs a `remove` operation on the `from` property.
-* If `path` points to a nonexistent property:
-  * If the resource to patch is a static object: the request fails.
-  * If the resource to patch is a dynamic object: copies `from` property to location indicated by `path`, then runs a `remove` operation on the `from` property.
+## Mitigating security risks
 
-The following sample patch document:
+When using the `Microsoft.AspNetCore.JsonPatch.SystemTextJson` package, it's critical to understand and mitigate potential security risks. The following sections outline the identified security risks associated with JSON Patch and provide recommended mitigations to ensure secure usage of the package.
 
-* Copies the value of `Orders[0].OrderName` to `CustomerName`.
-* Sets `Orders[0].OrderName` to null.
-* Moves `Orders[1]` to before `Orders[0]`.
+> [!IMPORTANT]
+> ***This is not an exhaustive list of threats.*** App developers must conduct their own threat model reviews to determine an app-specific comprehensive list and come up with appropriate mitigations as needed. For example, apps which expose collections to patch operations should consider the potential for algorithmic complexity attacks if those operations insert or remove elements at the beginning of the collection.
 
-[!code-json[](jsonpatch/samples/2.2/JSON/move.json)]
+To minimize security risks when integrating JSON Patch functionality into their apps, developers should:
 
-## The copy operation
+* Run comprehensive threat models for their own apps.
+* Address identified threats.
+* Follow the recommended mitigations in the following sections.
 
-This operation is functionally the same as a `move` operation without the final `remove` step.
+### Denial of Service (DoS) via memory amplification
 
-The following sample patch document:
+* **Scenario**: A malicious client submits a `copy` operation that duplicates large object graphs multiple times, leading to excessive memory consumption.
+* **Impact**: Potential Out-Of-Memory (OOM) conditions, causing service disruptions.
+* **Mitigation**:
+  * Validate incoming JSON Patch documents for size and structure before calling <xref:Microsoft.AspNetCore.JsonPatch.SystemTextJson.JsonPatchDocument.ApplyTo(System.Object)>.
+  * The validation must be app specific, but an example validation can look similar to the following:
 
-* Copies the value of `Orders[0].OrderName` to `CustomerName`.
-* Inserts a copy of `Orders[1]` before `Orders[0]`.
+```csharp
+public void Validate(JsonPatchDocument<T> patch)
+{
+    // This is just an example. It's up to the developer to make sure that
+    // this case is handled properly, based on the app needs.
+    if (patch.Operations.Where(op=>op.OperationType == OperationType.Copy).Count()
+                              > MaxCopyOperationsCount)
+    {
+        throw new InvalidOperationException();
+    }
+}
+```
 
-[!code-json[](jsonpatch/samples/2.2/JSON/copy.json)]
+### Business Logic Subversion
 
-## The test operation
+* **Scenario**: Patch operations can manipulate fields with implicit invariants (for example, internal flags, IDs, or computed fields), violating business constraints.
+* **Impact**: Data integrity issues and unintended app behavior.
+* **Mitigation**:
+  * Use POCOs (Plain Old CLR Objects) with explicitly defined properties that are safe to modify.
+    * Avoid exposing sensitive or security-critical properties in the target object.
+    * If a POCO object isn't used, validate the patched object after applying operations to ensure business rules and invariants aren't violated.
 
-If the value at the location indicated by `path` is different from the value provided in `value`, the request fails. In that case, the whole PATCH request fails even if all other operations in the patch document would otherwise succeed.
+### Authentication and authorization
 
-The `test` operation is commonly used to prevent an update when there's a concurrency conflict.
-
-The following sample patch document has no effect if the initial value of `CustomerName` is "John", because the test fails:
-
-[!code-json[](jsonpatch/samples/2.2/JSON/test-fail.json)]
+* **Scenario**: Unauthenticated or unauthorized clients send malicious JSON Patch requests.
+* **Impact**: Unauthorized access to modify sensitive data or disrupt app behavior.
+* **Mitigation**:
+  * Protect endpoints accepting JSON Patch requests with proper authentication and authorization mechanisms.
+  * Restrict access to trusted clients or users with appropriate permissions.
 
 ## Get the code
 
-[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/web-api/jsonpatch/samples). ([How to download](xref:index#how-to-download-a-sample)).
+[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/web-api/jsonpatch/samples). ([How to download](xref:fundamentals/index#how-to-download-a-sample)).
 
 To test the sample, run the app and send HTTP requests with the following settings:
 
@@ -250,220 +322,9 @@ To test the sample, run the app and send HTTP requests with the following settin
 
 * [IETF RFC 5789 PATCH method specification](https://tools.ietf.org/html/rfc5789)
 * [IETF RFC 6902 JSON Patch specification](https://tools.ietf.org/html/rfc6902)
-* [IETF RFC 6901 JSON Patch path format spec](https://tools.ietf.org/html/rfc6901)
-* [JSON Patch documentation](https://jsonpatch.com/). Includes links to resources for creating JSON Patch documents.
+* [IETF RFC 6901 JSON Pointer](https://tools.ietf.org/html/rfc6901)
 * [ASP.NET Core JSON Patch source code](https://github.com/dotnet/AspNetCore/tree/main/src/Features/JsonPatch/src)
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range="< aspnetcore-3.0"
-
-This article explains how to handle JSON Patch requests in an ASP.NET Core web API.
-
-## PATCH HTTP request method
-
-The PUT and [PATCH](https://tools.ietf.org/html/rfc5789) methods are used to update an existing resource. The difference between them is that PUT replaces the entire resource, while PATCH specifies only the changes.
-
-## JSON Patch
-
-[JSON Patch](https://tools.ietf.org/html/rfc6902) is a format for specifying updates to be applied to a resource. A JSON Patch document has an array of *operations*. Each operation identifies a particular type of change, such as add an array element or replace a property value.
-
-For example, the following JSON documents represent a resource, a JSON patch document for the resource, and the result of applying the patch operations.
-
-### Resource example
-
-[!code-json[](jsonpatch/samples/2.2/JSON/customer.json)]
-
-### JSON patch example
-
-[!code-json[](jsonpatch/samples/2.2/JSON/add.json)]
-
-In the preceding JSON:
-
-* The `op` property indicates the type of operation.
-* The `path` property indicates the element to update.
-* The `value` property provides the new value.
-
-### Resource after patch
-
-Here's the resource after applying the preceding JSON Patch document:
-
-```json
-{
-  "customerName": "Barry",
-  "orders": [
-    {
-      "orderName": "Order0",
-      "orderType": null
-    },
-    {
-      "orderName": "Order1",
-      "orderType": null
-    },
-    {
-      "orderName": "Order2",
-      "orderType": null
-    }
-  ]
-}
-```
-
-The changes made by applying a JSON Patch document to a resource are atomic: if any operation in the list fails, no operation in the list is applied.
-
-## Path syntax
-
-The [path](https://tools.ietf.org/html/rfc6901) property of an operation object has slashes between levels. For example, `"/address/zipCode"`.
-
-Zero-based indexes are used to specify array elements. The first element of the `addresses` array would be at `/addresses/0`. To `add` to the end of an array, use a hyphen (-) rather than an index number: `/addresses/-`.
-
-### Operations
-
-The following table shows supported operations as defined in the [JSON Patch specification](https://tools.ietf.org/html/rfc6902):
-
-|Operation  | Notes |
-|-----------|--------------------------------|
-| `add`     | Add a property or array element. For existing property: set value.|
-| `remove`  | Remove a property or array element. |
-| `replace` | Same as `remove` followed by `add` at same location. |
-| `move`    | Same as `remove` from source followed by `add` to destination using value from source. |
-| `copy`    | Same as `add` to destination using value from source. |
-| `test`    | Return success status code if value at `path` = provided `value`.|
-
-## JsonPatch in ASP.NET Core
-
-The ASP.NET Core implementation of JSON Patch is provided in the [Microsoft.AspNetCore.JsonPatch](https://www.nuget.org/packages/microsoft.aspnetcore.jsonpatch/) NuGet package. The package is included in the [Microsoft.AspnetCore.App](xref:fundamentals/metapackage-app) metapackage.
-
-## Action method code
-
-In an API controller, an action method for JSON Patch:
-
-* Is annotated with the `HttpPatch` attribute.
-* Accepts a `JsonPatchDocument<T>`, typically with `[FromBody]`.
-* Calls `ApplyTo` on the patch document to apply the changes.
-
-Here's an example:
-
-[!code-csharp[](jsonpatch/samples/2.2/Controllers/HomeController.cs?name=snippet_PatchAction&highlight=1,3,9)]
-
-This code from the sample app works with the following `Customer` model.
-
-[!code-csharp[](jsonpatch/samples/2.2/Models/Customer.cs?name=snippet_Customer)]
-
-[!code-csharp[](jsonpatch/samples/2.2/Models/Order.cs?name=snippet_Order)]
-
-The sample action method:
-
-* Constructs a `Customer`.
-* Applies the patch.
-* Returns the result in the body of the response.
-
- In a real app, the code would retrieve the data from a store such as a database and update the database after applying the patch.
-
-### Model state
-
-The preceding action method example calls an overload of `ApplyTo` that takes model state as one of its parameters. With this option, you can get error messages in responses. The following example shows the body of a 400 Bad Request response for a `test` operation:
-
-```json
-{
-    "Customer": [
-        "The current value 'John' at path 'customerName' is not equal to the test value 'Nancy'."
-    ]
-}
-```
-
-### Dynamic objects
-
-The following action method example shows how to apply a patch to a dynamic object.
-
-[!code-csharp[](jsonpatch/samples/2.2/Controllers/HomeController.cs?name=snippet_Dynamic)]
-
-## The add operation
-
-* If `path` points to an array element: inserts new element before the one specified by `path`.
-* If `path` points to a property: sets the property value.
-* If `path` points to a nonexistent location:
-  * If the resource to patch is a dynamic object: adds a property.
-  * If the resource to patch is a static object: the request fails.
-
-The following sample patch document sets the value of `CustomerName` and adds an `Order` object to the end of the `Orders` array.
-
-[!code-json[](jsonpatch/samples/2.2/JSON/add.json)]
-
-## The remove operation
-
-* If `path` points to an array element: removes the element.
-* If `path` points to a property:
-  * If resource to patch is a dynamic object: removes the property.
-  * If resource to patch is a static object:
-    * If the property is nullable: sets it to null.
-    * If the property is non-nullable, sets it to `default<T>`.
-
-The following sample patch document sets `CustomerName` to null and deletes `Orders[0]`.
-
-[!code-json[](jsonpatch/samples/2.2/JSON/remove.json)]
-
-## The replace operation
-
-This operation is functionally the same as a `remove` followed by an `add`.
-
-The following sample patch document sets the value of `CustomerName` and replaces `Orders[0]`with a new `Order` object.
-
-[!code-json[](jsonpatch/samples/2.2/JSON/replace.json)]
-
-## The move operation
-
-* If `path` points to an array element: copies `from` element to location of `path` element, then runs a `remove` operation on the `from` element.
-* If `path` points to a property: copies value of `from` property to `path` property, then runs a `remove` operation on the `from` property.
-* If `path` points to a nonexistent property:
-  * If the resource to patch is a static object: the request fails.
-  * If the resource to patch is a dynamic object: copies `from` property to location indicated by `path`, then runs a `remove` operation on the `from` property.
-
-The following sample patch document:
-
-* Copies the value of `Orders[0].OrderName` to `CustomerName`.
-* Sets `Orders[0].OrderName` to null.
-* Moves `Orders[1]` to before `Orders[0]`.
-
-[!code-json[](jsonpatch/samples/2.2/JSON/move.json)]
-
-## The copy operation
-
-This operation is functionally the same as a `move` operation without the final `remove` step.
-
-The following sample patch document:
-
-* Copies the value of `Orders[0].OrderName` to `CustomerName`.
-* Inserts a copy of `Orders[1]` before `Orders[0]`.
-
-[!code-json[](jsonpatch/samples/2.2/JSON/copy.json)]
-
-## The test operation
-
-If the value at the location indicated by `path` is different from the value provided in `value`, the request fails. In that case, the whole PATCH request fails even if all other operations in the patch document would otherwise succeed.
-
-The `test` operation is commonly used to prevent an update when there's a concurrency conflict.
-
-The following sample patch document has no effect if the initial value of `CustomerName` is "John", because the test fails:
-
-[!code-json[](jsonpatch/samples/2.2/JSON/test-fail.json)]
-
-## Get the code
-
-[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/web-api/jsonpatch/samples/2.2). ([How to download](xref:index#how-to-download-a-sample)).
-
-To test the sample, run the app and send HTTP requests with the following settings:
-
-* URL: `http://localhost:{port}/jsonpatch/jsonpatchwithmodelstate`
-* HTTP method: `PATCH`
-* Header: `Content-Type: application/json-patch+json`
-* Body: Copy and paste one of the JSON patch document samples from the *JSON* project folder.
-
-## Additional resources
-
-* [IETF RFC 5789 PATCH method specification](https://tools.ietf.org/html/rfc5789)
-* [IETF RFC 6902 JSON Patch specification](https://tools.ietf.org/html/rfc6902)
-* [IETF RFC 6901 JSON Patch path format spec](https://tools.ietf.org/html/rfc6901)
-* [JSON Patch documentation](https://jsonpatch.com/). Includes links to resources for creating JSON Patch documents.
-* [ASP.NET Core JSON Patch source code](https://github.com/dotnet/AspNetCore/tree/main/src/Features/JsonPatch/src)
-
-::: moniker-end
+[!INCLUDE[](~/web-api/jsonpatch/includes/jsonpatch9.md)]
