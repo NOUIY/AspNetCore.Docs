@@ -1,7 +1,1 @@
----
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
----
-The `:` separator doesn't work with environment variable hierarchical keys on all platforms. `__`, the double underscore, is:
-
-* Supported by all platforms. For example, the `:` separator is not supported by [Bash](https://linuxhint.com/bash-environment-variables/), but `__` is.
-* Automatically replaced by a `:`
+The `:` separator doesn't work with environment variable hierarchical keys on all platforms. For example, the `:` separator isn't supported by [Bash](https://linuxhint.com/bash-environment-variables/). The double underscore, `__`, is supported by all platforms and automatically replaced by a colon, `:`.

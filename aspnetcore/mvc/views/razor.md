@@ -1,10 +1,9 @@
 ---
 title: Razor syntax reference for ASP.NET Core
-author: rick-anderson
+author: tdykstra
 description: Learn about Razor markup syntax for embedding server-based code into webpages.
-ms.author: riande
+ms.author: tdykstra
 ms.date: 02/12/2020
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: mvc/views/razor
 ---
 # Razor syntax reference for ASP.NET Core
@@ -27,7 +26,7 @@ When an `@` symbol is followed by a [Razor reserved keyword](#razor-reserved-key
 
 To escape an `@` symbol in Razor markup, use a second `@` symbol:
 
-```cshtml
+```razor
 <p>@@Username</p>
 ```
 
@@ -39,12 +38,11 @@ The code is rendered in HTML with a single `@` symbol:
 
 HTML attributes and content containing email addresses don't treat the `@` symbol as a transition character. The email addresses in the following example are untouched by Razor parsing:
 
-```cshtml
+```razor
 <a href="mailto:Support@contoso.com">Support@contoso.com</a>
 ```
 
-
-::: moniker range=">= aspnetcore-6.0"
+:::moniker range=">= aspnetcore-6.0"
 
 ### Scalable Vector Graphics (SVG)
 
@@ -64,26 +62,26 @@ HTML attributes and content containing email addresses don't treat the `@` symbo
 </svg>
 ```
 
-::: moniker-end
+:::moniker-end
 
 ## Implicit Razor expressions
 
 Implicit Razor expressions start with `@` followed by C# code:
 
-```cshtml
+```razor
 <p>@DateTime.Now</p>
 <p>@DateTime.IsLeapYear(2016)</p>
 ```
 
 With the exception of the C# `await` keyword, implicit expressions must not contain spaces. If the C# statement has a clear ending, spaces can be intermingled:
 
-```cshtml
+```razor
 <p>@await DoSomething("hello", "world")</p>
 ```
 
 Implicit expressions **cannot** contain C# generics, as the characters inside the brackets (`<>`) are interpreted as an HTML tag. The following code is **not** valid:
 
-```cshtml
+```razor
 <p>@GenericMethod<int>()</p>
 ```
 
@@ -98,7 +96,7 @@ Generic method calls must be wrapped in an [explicit Razor expression](#explicit
 
 Explicit Razor expressions consist of an `@` symbol with balanced parenthesis. To render last week's time, the following Razor markup is used:
 
-```cshtml
+```razor
 <p>Last week this time: @(DateTime.Now - TimeSpan.FromDays(7))</p>
 ```
 
@@ -116,7 +114,7 @@ The code renders the following HTML:
 
 Explicit expressions can be used to concatenate text with an expression result:
 
-```cshtml
+```razor
 @{
     var joe = new Person("Joe", 33);
 }
@@ -128,7 +126,7 @@ Without the explicit expression, `<p>Age@joe.Age</p>` is treated as an email add
 
 Explicit expressions can be used to render output from generic methods in `.cshtml` files. The following markup shows how to correct the error shown earlier caused by the brackets of a C# generic. The code is written as an explicit expression:
 
-```cshtml
+```razor
 <p>@(GenericMethod<int>())</p>
 ```
 
@@ -136,7 +134,7 @@ Explicit expressions can be used to render output from generic methods in `.csht
 
 C# expressions that evaluate to a string are HTML encoded. C# expressions that evaluate to `IHtmlContent` are rendered directly through `IHtmlContent.WriteTo`. C# expressions that don't evaluate to `IHtmlContent` are converted to a string by `ToString` and encoded before they're rendered.
 
-```cshtml
+```razor
 @("<span>Hello World</span>")
 ```
 
@@ -155,7 +153,7 @@ The HTML is shown in the browser as plain text:
 > [!WARNING]
 > Using `HtmlHelper.Raw` on unsanitized user input is a security risk. User input might contain malicious JavaScript or other exploits. Sanitizing user input is difficult. Avoid using `HtmlHelper.Raw` with user input.
 
-```cshtml
+```razor
 @Html.Raw("<span>Hello World</span>")
 ```
 
@@ -169,7 +167,7 @@ The code renders the following HTML:
 
 Razor code blocks start with `@` and are enclosed by `{}`. Unlike expressions, C# code inside code blocks isn't rendered. Code blocks and expressions in a view share the same scope and are defined in order:
 
-```cshtml
+```razor
 @{
     var quote = "The future depends on what you do today. - Mahatma Gandhi";
 }
@@ -192,7 +190,7 @@ The code renders the following HTML:
 
 In code blocks, declare [local functions](/dotnet/csharp/programming-guide/classes-and-structs/local-functions) with markup to serve as templating methods:
 
-```cshtml
+```razor
 @{
     void RenderName(string name)
     {
@@ -215,7 +213,7 @@ The code renders the following HTML:
 
 The default language in a code block is C#, but the Razor Page can transition back to HTML:
 
-```cshtml
+```razor
 @{
     var inCSharp = true;
     <p>Now in HTML, was in C# @inCSharp</p>
@@ -226,7 +224,7 @@ The default language in a code block is C#, but the Razor Page can transition ba
 
 To define a subsection of a code block that should render HTML, surround the characters for rendering with the Razor `<text>` tag:
 
-```cshtml
+```razor
 @for (var i = 0; i < people.Length; i++)
 {
     var person = people[i];
@@ -245,7 +243,7 @@ The `<text>` tag is useful to control whitespace when rendering content:
 
 To render the rest of an entire line as HTML inside a code block, use `@:` syntax:
 
-```cshtml
+```razor
 @for (var i = 0; i < people.Length; i++)
 {
     var person = people[i];
@@ -255,7 +253,54 @@ To render the rest of an entire line as HTML inside a code block, use `@:` synta
 
 Without the `@:` in the code, a Razor runtime error is generated.
 
-Extra `@` characters in a Razor file can cause compiler errors at statements later in the block. These compiler errors can be difficult to understand because the actual error occurs before the reported error. This error is common after combining multiple implicit/explicit expressions into a single code block.
+Extra `@` characters in a Razor file can cause compiler errors at statements later in the block. These extra `@` compiler errors:
+
+* Can be difficult to understand because the actual error occurs before the reported error.
+* Is common after combining multiple implicit and explicit expressions into a single code block.
+
+### Conditional attribute rendering
+
+Razor automatically omits attributes that aren't required. If the value passed in is `null` or `false`, the attribute isn't rendered.
+
+For example, consider the following Razor markup:
+
+```razor
+<div class="@false">False</div>
+<div class="@null">Null</div>
+<div class="@("")">Empty</div>
+<div class="@("false")">False String</div>
+<div class="@("active")">String</div>
+<input type="checkbox" checked="@true" name="true" />
+<input type="checkbox" checked="@false" name="false" />
+<input type="checkbox" checked="@null" name="null" />
+```
+
+The preceding Razor markup generates the following HTML:
+
+```html
+<div>False</div>
+<div>Null</div>
+<div class="">Empty</div>
+<div class="false">False String</div>
+<div class="active">String</div>
+<input type="checkbox" checked="checked" name="true">
+<input type="checkbox" name="false">
+<input type="checkbox" name="null">
+```
+
+Razor retains `data-` attributes if their values are `null` or `false`.
+
+Consider the following Razor markup:
+
+```razor
+<div data-id="@null" data-active="@false"></div>
+```
+
+The preceding Razor markup generates the following HTML:
+
+```html
+<div data-id="" data-active="False"></div>
+```
 
 ## Control structures
 
@@ -265,7 +310,7 @@ Control structures are an extension of code blocks. All aspects of code blocks (
 
 `@if` controls when code runs:
 
-```cshtml
+```razor
 @if (value % 2 == 0)
 {
     <p>The value was even.</p>
@@ -274,7 +319,7 @@ Control structures are an extension of code blocks. All aspects of code blocks (
 
 `else` and `else if` don't require the `@` symbol:
 
-```cshtml
+```razor
 @if (value % 2 == 0)
 {
     <p>The value was even.</p>
@@ -291,7 +336,7 @@ else
 
 The following markup shows how to use a switch statement:
 
-```cshtml
+```razor
 @switch (value)
 {
     case 1:
@@ -310,7 +355,7 @@ The following markup shows how to use a switch statement:
 
 Templated HTML can be rendered with looping control statements. To render a list of people:
 
-```cshtml
+```razor
 @{
     var people = new Person[]
     {
@@ -325,7 +370,7 @@ The following looping statements are supported:
 
 `@for`
 
-```cshtml
+```razor
 @for (var i = 0; i < people.Length; i++)
 {
     var person = people[i];
@@ -336,7 +381,7 @@ The following looping statements are supported:
 
 `@foreach`
 
-```cshtml
+```razor
 @foreach (var person in people)
 {
     <p>Name: @person.Name</p>
@@ -346,7 +391,7 @@ The following looping statements are supported:
 
 `@while`
 
-```cshtml
+```razor
 @{ var i = 0; }
 @while (i < people.Length)
 {
@@ -360,7 +405,7 @@ The following looping statements are supported:
 
 `@do while`
 
-```cshtml
+```razor
 @{ var i = 0; }
 @do
 {
@@ -376,11 +421,11 @@ The following looping statements are supported:
 
 In C#, a `using` statement is used to ensure an object is disposed. In Razor, the same mechanism is used to create HTML Helpers that contain additional content. In the following code, HTML Helpers render a `<form>` tag with the `@using` statement:
 
-```cshtml
+```razor
 @using (Html.BeginForm())
 {
     <div>
-        Email: <input type="email" id="Email" value="">
+        <label>Email: <input type="email" id="Email" value=""></label>
         <button>Register</button>
     </div>
 }
@@ -396,7 +441,7 @@ Exception handling is similar to C#:
 
 Razor has the capability to protect critical sections with lock statements:
 
-```cshtml
+```razor
 @lock (SomeLock)
 {
     // Do critical section work
@@ -407,7 +452,7 @@ Razor has the capability to protect critical sections with lock statements:
 
 Razor supports C# and HTML comments:
 
-```cshtml
+```razor
 @{
     /* C# comment */
     // Another C# comment
@@ -423,7 +468,7 @@ The code renders the following HTML:
 
 Razor comments are removed by the server before the webpage is rendered. Razor uses `@*  *@` to delimit comments. The following code is commented out, so the server doesn't render any markup:
 
-```cshtml
+```razor
 @*
     @{
         /* C# comment */
@@ -435,7 +480,7 @@ Razor comments are removed by the server before the webpage is rendered. Razor u
 
 ## Directives
 
-Razor directives are represented by implicit expressions with reserved keywords following the `@` symbol. A directive typically changes the way a view is parsed or enables different functionality.
+Razor directives are represented by implicit expressions with reserved keywords following the `@` symbol. A directive typically changes the way a view is compiled or functions.
 
 Understanding how Razor generates code for a view makes it easier to understand how directives work.
 
@@ -463,8 +508,15 @@ Later in this article, the section [Inspect the Razor C# class generated for a v
 
 The `@attribute` directive adds the given attribute to the class of the generated page or view. The following example adds the `[Authorize]` attribute:
 
-```cshtml
+```razor
 @attribute [Authorize]
+```
+
+The `@attribute` directive can also be used to supply a constant-based route template in a Razor component. In the following example, the `@page` directive in a component is replaced with the `@attribute` directive and the constant-based route template in `Constants.CounterRoute`, which is set elsewhere in the app to "`/counter`":
+
+```diff
+- @page "/counter"
++ @attribute [Route(Constants.CounterRoute)]
 ```
 
 ### `@code`
@@ -485,7 +537,7 @@ For Razor components, `@code` is an alias of [`@functions`](#functions) and reco
 
 The `@functions` directive enables adding C# members (fields, properties, and methods) to the generated class:
 
-```cshtml
+```razor
 @functions {
     // C# members (fields, properties, and methods)
 }
@@ -509,7 +561,7 @@ The following code is the generated Razor C# class:
 
 `@functions` methods serve as templating methods when they have markup:
 
-```cshtml
+```razor
 @{
     RenderName("Mahatma Gandhi");
     RenderName("Martin Luther King, Jr.");
@@ -536,7 +588,7 @@ The `@implements` directive implements an interface for the generated class.
 
 The following example implements <xref:System.IDisposable?displayProperty=fullName> so that the <xref:System.IDisposable.Dispose*> method can be called:
 
-```cshtml
+```razor
 @implements IDisposable
 
 <h1>Example</h1>
@@ -554,7 +606,7 @@ The following example implements <xref:System.IDisposable?displayProperty=fullNa
 
 The `@inherits` directive provides full control of the class the view inherits:
 
-```cshtml
+```razor
 @inherits TypeNameOfClassToInheritFrom
 ```
 
@@ -609,17 +661,17 @@ The `@layout` directive specifies a layout for routable Razor components that ha
 
 The `@model` directive specifies the type of the model passed to a view or page:
 
-```cshtml
+```razor
 @model TypeNameOfModel
 ```
 
-In an ASP.NET Core MVC or Razor Pages app created with individual user accounts, `Views/Account/Login.cshtml` contains the following model declaration:
+In an ASP.NET Core MVC or Razor Pages app created with individual accounts, `Views/Account/Login.cshtml` contains the following model declaration:
 
-```cshtml
+```razor
 @model LoginViewModel
 ```
 
-The class generated inherits from `RazorPage<dynamic>`:
+The class generated inherits from `RazorPage<LoginViewModel>`:
 
 ```csharp
 public class _Views_Account_Login_cshtml : RazorPage<LoginViewModel>
@@ -627,7 +679,7 @@ public class _Views_Account_Login_cshtml : RazorPage<LoginViewModel>
 
 Razor exposes a `Model` property for accessing the model passed to the view:
 
-```cshtml
+```razor
 <div>The Login Email: @Model.Email</div>
 ```
 
@@ -638,9 +690,9 @@ The `@model` directive specifies the type of the `Model` property. The directive
 The `@namespace` directive:
 
 * Sets the namespace of the class of the generated Razor page, MVC view, or Razor component.
-* Sets the root derived namespaces of a pages, views, or components classes from the closest imports file in the directory tree, `_ViewImports.cshtml` (views or pages) or *_Imports.razor* (Razor components).
+* Sets the root derived namespaces of a pages, views, or components classes from the closest imports file in the directory tree, `_ViewImports.cshtml` (views or pages) or `_Imports.razor` (Razor components).
 
-```cshtml
+```razor
 @namespace Your.Namespace.Here
 ```
 
@@ -675,7 +727,7 @@ The `@page` directive has different effects depending on the type of the file wh
 * In a `.cshtml` file indicates that the file is a Razor Page. For more information, see [Custom routes](xref:razor-pages/index#custom-routes) and <xref:razor-pages/index>.
 * Specifies that a Razor component should handle requests directly. For more information, see <xref:blazor/fundamentals/routing>.
 
-::: moniker range=">= aspnetcore-5.0"
+:::moniker range=">= aspnetcore-5.0"
 
 ### `@preservewhitespace`
 
@@ -687,13 +739,79 @@ When set to `false` (default), whitespace in the rendered markup from Razor comp
 * Leading or trailing within a `RenderFragment` parameter. For example, child content passed to another component.
 * It precedes or follows a C# code block, such as `@if` or `@foreach`.
 
-::: moniker-end
+:::moniker-end
+
+:::moniker range=">= aspnetcore-8.0"
+
+### `@rendermode`
+
+*This scenario only applies to Razor components (`.razor`).*
+
+Sets the render mode of a Razor component:
+
+* `InteractiveServer`: Applies interactive server rendering using Blazor Server.
+* `InteractiveWebAssembly`: Applies interactive WebAssembly rendering using Blazor WebAssembly.
+* `InteractiveAuto`: Initially applies interactive WebAssembly rendering using Blazor Server, and then applies interactive WebAssembly rendering using WebAssembly on subsequent visits after the Blazor bundle is downloaded.
+
+For a component instance:
+
+```razor
+<... @rendermode="InteractiveServer" />
+```
+
+In the component definition:
+
+```razor
+@rendermode InteractiveServer
+```
+
+> [!NOTE]
+> Blazor templates include a static `using` directive for <xref:Microsoft.AspNetCore.Components.Web.RenderMode> in the app's `_Imports` file (`Components/_Imports.razor`) for shorter `@rendermode` syntax:
+>
+> ```razor
+> @using static Microsoft.AspNetCore.Components.Web.RenderMode
+> ```
+>
+> Without the preceding directive, components must specify the static <xref:Microsoft.AspNetCore.Components.Web.RenderMode> class in `@rendermode` syntax explicitly:
+>
+> ```razor
+> <Dialog @rendermode="RenderMode.InteractiveServer" />
+> ```
+
+For more information, including guidance on disabling prerendering with the directive/directive attribute, see <xref:blazor/components/render-modes>.
+
+:::moniker-end
 
 ### `@section`
 
 *This scenario only applies to MVC views and Razor Pages (`.cshtml`).*
 
 The `@section` directive is used in conjunction with [MVC and Razor Pages layouts](xref:mvc/views/layout) to enable views or pages to render content in different parts of the HTML page. For more information, see <xref:mvc/views/layout>.
+
+### `@typeparam`
+
+*This scenario only applies to Razor components (`.razor`).*
+
+The `@typeparam` directive declares a [generic type parameter](/dotnet/csharp/programming-guide/generics/generic-type-parameters) for the generated component class:
+
+```razor
+@typeparam TEntity
+```
+
+:::moniker range=">= aspnetcore-6.0"
+
+Generic types with [`where`](/dotnet/csharp/language-reference/keywords/where-generic-type-constraint) type constraints are supported:
+
+```razor
+@typeparam TEntity where TEntity : IEntity
+```
+
+:::moniker-end
+
+For more information, see the following articles:
+
+* <xref:blazor/components/generic-type-support>
+* <xref:blazor/components/templated-components>
 
 ### `@using`
 
@@ -705,13 +823,13 @@ In [Razor components](xref:blazor/components/index), `@using` also controls whic
 
 ## Directive attributes
 
-Razor directive attributes are represented by implicit expressions with reserved keywords following the `@` symbol. A directive attribute typically changes the way an element is parsed or enables different functionality.
+Razor directive attributes are represented by implicit expressions with reserved keywords following the `@` symbol. A directive attribute typically changes the way an element is compiled or functions.
 
 ### `@attributes`
 
 *This scenario only applies to Razor components (`.razor`).*
 
-`@attributes` allows a component to render non-declared attributes. For more information, see <xref:blazor/components/index#attribute-splatting-and-arbitrary-parameters>.
+`@attributes` allows a component to render non-declared attributes. For more information, see <xref:blazor/components/attribute-splatting>.
 
 ### `@bind`
 
@@ -724,6 +842,21 @@ Data binding in components is accomplished with the `@bind` attribute. For more 
 *This scenario only applies to Razor components (`.razor`).*
 
 Use the `@bind:culture` attribute with the [`@bind`](#bind) attribute to provide a <xref:System.Globalization.CultureInfo?displayProperty=fullName> for parsing and formatting a value. For more information, see <xref:blazor/globalization-localization#globalization>.
+
+:::moniker range=">= aspnetcore-8.0"
+
+### `@formname`
+
+*This scenario only applies to Razor components (`.razor`).*
+
+`@formname` assigns a form name to a Razor component's plain HTML form or a form based on <xref:Microsoft.AspNetCore.Components.Forms.EditForm> ([`Editform` documentation](xref:blazor/forms/binding#editformeditcontext-model)). The value of `@formname` should be unique, which prevents form collisions in the following situations:
+
+* A form is placed in a component with multiple forms.
+* A form is sourced from an external class library, commonly a NuGet package, for a component with multiple forms, and the app author doesn't control the source code of the library to set a different external form name than a name used by another form in the component.
+
+For more information and examples, see <xref:blazor/forms/index>.
+
+:::moniker-end
 
 ### `@on{EVENT}`
 
@@ -747,7 +880,7 @@ Stops event propagation for the event.
 
 *This scenario only applies to Razor components (`.razor`).*
 
-The `@key` directive attribute causes the components diffing algorithm to guarantee preservation of elements or components based on the key's value. For more information, see <xref:blazor/components/index#use-key-to-control-the-preservation-of-elements-and-components>.
+The `@key` directive attribute causes the components diffing algorithm to guarantee preservation of elements or components based on the key's value. For more information, see <xref:blazor/components/key>.
 
 ### `@ref`
 
@@ -755,55 +888,13 @@ The `@key` directive attribute causes the components diffing algorithm to guaran
 
 Component references (`@ref`) provide a way to reference a component instance so that you can issue commands to that instance. For more information, see <xref:blazor/components/index#capture-references-to-components>.
 
-::: moniker range=">= aspnetcore-6.0"
-
-### `@typeparam`
-
-*This scenario only applies to Razor components (`.razor`).*
-
-The `@typeparam` directive declares a [generic type parameter](/dotnet/csharp/programming-guide/generics/generic-type-parameters) for the generated component class:
-
-```razor
-@typeparam TEntity
-```
-
-Generic types with [`where`](/dotnet/csharp/language-reference/keywords/where-generic-type-constraint) type constraints are supported:
-
-```razor
-@typeparam TEntity where TEntity : IEntity
-```
-
-For more information, see the following articles:
-
-* <xref:blazor/components/index#generic-type-parameter-support>
-* <xref:blazor/components/templated-components>
-
-::: moniker-end
-
-::: moniker range="< aspnetcore-6.0"
-
-### `@typeparam`
-
-*This scenario only applies to Razor components (`.razor`).*
-
-The `@typeparam` directive declares a [generic type parameter](/dotnet/csharp/programming-guide/generics/generic-type-parameters) for the generated component class:
-
-```razor
-@typeparam TEntity
-```
-
-For more information, see the following articles:
-
-* <xref:blazor/components/index#generic-type-parameter-support>
-* <xref:blazor/components/templated-components>
-
-::: moniker-end
-
 ## Templated Razor delegates
+
+*This scenario only applies to MVC views and Razor Pages (`.cshtml`).*
 
 Razor templates allow you to define a UI snippet with the following format:
 
-```cshtml
+```razor
 @<tag>...</tag>
 ```
 
@@ -816,7 +907,7 @@ public class Pet
 }
 ```
 
-```cshtml
+```razor
 @{
     Func<dynamic, object> petTemplate = @<p>You have a pet named <strong>@item.Name</strong>.</p>;
 
@@ -831,7 +922,7 @@ public class Pet
 
 The template is rendered with `pets` supplied by a `foreach` statement:
 
-```cshtml
+```razor
 @foreach (var pet in pets)
 {
     @petTemplate(pet)
@@ -848,7 +939,7 @@ Rendered output:
 
 You can also supply an inline Razor template as an argument to a method. In the following example, the `Repeat` method receives a Razor template. The method uses the template to produce HTML content with repeats of items supplied from a list:
 
-```cshtml
+```razor
 @using Microsoft.AspNetCore.Html
 
 @functions {
@@ -876,7 +967,7 @@ Using the list of pets from the prior example, the `Repeat` method is called wit
 * Number of times to repeat each pet.
 * Inline template to use for the list items of an unordered list.
 
-```cshtml
+```razor
 <ul>
     @Repeat(pets, 3, @<li>@item.Name</li>)
 </ul>
@@ -949,9 +1040,25 @@ C# Razor keywords must be double-escaped with `@(@C# Razor Keyword)` (for exampl
 
 ## Inspect the Razor C# class generated for a view
 
-The [Razor SDK](xref:razor-pages/sdk) handles compilation of Razor files. When building a project, the Razor SDK generates an `obj/<build_configuration>/<target_framework_moniker>/Razor` directory in the project root. The directory structure within the `Razor` directory mirrors the project's directory structure.
+::: moniker range=">= aspnetcore-5.0"
 
-Consider the following directory structure in an ASP.NET Core Razor Pages project:
+The [Razor SDK](xref:razor-pages/sdk) handles compilation of Razor files. By default, the generated code files aren't emitted. To enable emitting the code files, set the `EmitCompilerGeneratedFiles` directive in the project file (`.csproj`) to `true`:
+
+```xml
+<PropertyGroup>
+  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+</PropertyGroup>
+```
+
+When building a 6.0 project (`net6.0`) in the `Debug` build configuration, the Razor SDK generates an `obj/Debug/net6.0/generated/` directory in the project root. Its subdirectory contains the emitted Razor page code files.
+
+::: moniker-end
+
+::: moniker range="< aspnetcore-5.0"
+
+The [Razor SDK](xref:razor-pages/sdk) handles compilation of Razor files. When building a project, the Razor SDK generates an `obj/{BUILD CONFIGURATION}/{TARGET FRAMEWORK MONIKER}/Razor` directory in the project root. The directory structure within the `Razor` directory mirrors the project's directory structure.
+
+Consider the following directory structure in an ASP.NET Core Razor Pages 2.1 project:
 
 ```
  Areas/
@@ -966,9 +1073,9 @@ Consider the following directory structure in an ASP.NET Core Razor Pages projec
    _ViewStart.cshtml
    Index.cshtml
    Index.cshtml.cs
-  ```
+```
 
-Building the project in *Debug* configuration yields the following `obj` directory:
+Building the project in `Debug` configuration yields the following `obj` directory:
 
 ```
  obj/
@@ -989,6 +1096,8 @@ Building the project in *Debug* configuration yields the following `obj` directo
 
 To view the generated class for `Pages/Index.cshtml`, open `obj/Debug/netcoreapp2.1/Razor/Pages/Index.g.cshtml.cs`.
 
+::: moniker-end
+
 ## View lookups and case sensitivity
 
 The Razor view engine performs case-sensitive lookups for views. However, the actual lookup is determined by the underlying file system:
@@ -996,7 +1105,7 @@ The Razor view engine performs case-sensitive lookups for views. However, the ac
 * File based source:
   * On operating systems with case insensitive file systems (for example, Windows), physical file provider lookups are case insensitive. For example, `return View("Test")` results in matches for `/Views/Home/Test.cshtml`, `/Views/home/test.cshtml`, and any other casing variant.
   * On case-sensitive file systems (for example, Linux, OSX, and with `EmbeddedFileProvider`), lookups are case-sensitive. For example, `return View("Test")` specifically matches `/Views/Home/Test.cshtml`.
-* Precompiled views: With ASP.NET Core 2.0 and later, looking up precompiled views is case insensitive on all operating systems. The behavior is identical to physical file provider's behavior on Windows. If two precompiled views differ only in case, the result of lookup is non-deterministic.
+* Precompiled views: With ASP.NET Core 2.0 or later, looking up precompiled views is case insensitive on all operating systems. The behavior is identical to physical file provider's behavior on Windows. If two precompiled views differ only in case, the result of lookup is non-deterministic.
 
 Developers are encouraged to match the casing of file and directory names to the casing of:
 
