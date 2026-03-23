@@ -1,16 +1,15 @@
 ---
-title: What's new in ASP.NET Core 6.0
-author: rick-anderson
-description: Learn about the new features in ASP.NET Core 6.0.
-ms.author: riande
+title: What's new in ASP.NET Core in .NET 6
+author: tdykstra
+description: Learn about the new features in ASP.NET Core in .NET 6.
+ms.author: tdykstra
 ms.custom: mvc
 ms.date: 10/29/2021
-no-loc: [Home, Privacy, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR, Kestrel]
 uid: aspnetcore-6.0
 ---
-# What's new in ASP.NET Core 6.0
+# What's new in ASP.NET Core in .NET 6
 
-This article highlights the most significant changes in ASP.NET Core 6.0 with links to relevant documentation.
+This article highlights the most significant changes in ASP.NET Core in .NET 6 with links to relevant documentation.
 
 ## ASP.NET Core MVC and Razor improvements
 
@@ -19,7 +18,7 @@ This article highlights the most significant changes in ASP.NET Core 6.0 with li
 Minimal APIs are architected to create HTTP APIs with minimal dependencies. They are ideal for microservices and apps that want to include only the minimum files, features, and dependencies in ASP.NET Core. For more information, see:
 
 * <xref:tutorials/min-web-api>
-* [Differences between minimal APIs and APIs with controllers](xref:tutorials/min-web-api?view=aspnetcore-6.0#differences-between-minimal-apis-and-apis-with-controllers)
+* [Differences between Minimal APIs and APIs with controllers](xref:tutorials/min-web-api?view=aspnetcore-6.0#differences-between-minimal-apis-and-apis-with-controllers)
 * <xref:fundamentals/minimal-apis>
 * <xref:migration/50-to-60-samples>
 
@@ -56,7 +55,7 @@ For more information about this change, see [the related announcement issue](htt
 Many changes were made to reduce allocations and improve performance across the stack:
 
 * Non-allocating [app.Use](xref:Microsoft.AspNetCore.Builder.IApplicationBuilder.Use%2A) extension method. The new overload of `app.Use` requires passing the context to `next` which saves two internal per-request allocations that are required when using the other overload.
-* Reduced memory allocations when accessing the [HttpRequest.Cookies](xref:System.Web.HttpRequest.Cookies). For more information, see [this GitHub issue](https://github.com/dotnet/aspnetcore/issues/10030).
+* Reduced memory allocations when accessing <xref:Microsoft.AspNetCore.Http.HttpRequest.Cookies%2A?displayProperty=nameWithType>. For more information, see [this GitHub issue](https://github.com/dotnet/aspnetcore/issues/10030).
 * Use [LoggerMessage.Define](xref:Microsoft.Extensions.Logging.LoggerMessage.Define%2A) for the windows only [HTTP.sys web server](xref:fundamentals/servers/httpsys). The <xref:Microsoft.Extensions.Logging.ILogger> extension methods calls have been replaced with calls to `LoggerMessage.Define`.
 * Reduce the per connection overhead in [SocketConnection](https://github.com/dotnet/aspnetcore/blob/main/src/Servers/Kestrel/Transport.Sockets/src/Internal/SocketConnection.cs) by ~30%. For more information, see [this GitHub pull request](https://github.com/dotnet/aspnetcore/pull/31308).
 * Reduce allocations by removing logging delegates in generic types. For more information, see [this GitHub pull request](https://github.com/dotnet/aspnetcore/issues/31340).
@@ -144,17 +143,24 @@ With the preceding snippet, the SignalR C++ client is ready to use [`#include`](
 
 ## Blazor
 
+### Project template changes
+
+Several project template changes were made for Blazor apps, including the use of the `Pages/_Layout.cshtml` file for layout content that appeared in the `_Host.cshtml` file for earlier Blazor Server apps. Study the changes by creating an app from a 6.0 project template or accessing the ASP.NET Core reference source for the project templates:
+
+* [Blazor Server](https://github.com/dotnet/aspnetcore/tree/v6.0.0/src/ProjectTemplates/Web.ProjectTemplates/content/BlazorServerWeb-CSharp)
+* [Blazor WebAssembly](https://github.com/dotnet/aspnetcore/tree/v6.0.0/src/ProjectTemplates/Web.ProjectTemplates/content/ComponentsWebAssembly-CSharp)
+
 ### Blazor WebAssembly native dependencies support
 
 Blazor WebAssembly apps can use native dependencies built to run on WebAssembly. For more information, see <xref:blazor/webassembly-native-dependencies>.
 
 ### WebAssembly Ahead-of-time (AOT) compilation and runtime relinking
 
-Blazor WebAssembly supports ahead-of-time (AOT) compilation, where you can compile your .NET code directly into WebAssembly. AOT compilation results in runtime performance improvements at the expense of a larger app size. Relinking the .NET WebAssembly runtime trims unused runtime code and thus improves download speed. For more information, see [Ahead-of-time (AOT) compilation](xref:blazor/host-and-deploy/webassembly?view=aspnetcore-6.0#ahead-of-time-aot-compilation) and [Runtime relinking](xref:blazor/host-and-deploy/webassembly?view=aspnetcore-6.0#runtime-relinking).
+Blazor WebAssembly supports ahead-of-time (AOT) compilation, where you can compile your .NET code directly into WebAssembly. AOT compilation results in runtime performance improvements at the expense of a larger app size. Relinking the .NET WebAssembly runtime trims unused runtime code and thus improves download speed. For more information, see [Ahead-of-time (AOT) compilation](xref:blazor/host-and-deploy/webassembly/index?view=aspnetcore-6.0#ahead-of-time-aot-compilation) and [Runtime relinking](xref:blazor/tooling/webassembly?view=aspnetcore-6.0#runtime-relinking).
 
 ### Persist prerendered state
 
-Blazor supports persisting state in a prerendered page so that the state doesn't need to be recreated when the app is fully loaded. For more information, see <xref:blazor/components/prerendering-and-integration?view=aspnetcore-6.0&pivots=server#persist-prerendered-state>.
+Blazor supports persisting state in a prerendered page so that the state doesn't need to be recreated when the app is fully loaded. For more information, see <xref:blazor/components/integration?view=aspnetcore-6.0&pivots=server#persist-prerendered-state>.
 
 ### Error boundaries
 
@@ -173,14 +179,14 @@ Blazor supports optimized byte array JS interop that avoids encoding and decodin
 
 ### Query string enhancements
 
-Support for working with query strings is improved. For more information, see <xref:blazor/fundamentals/routing?view=aspnetcore-6.0#query-strings>.
+Support for working with query strings is improved. For more information, see <xref:blazor/fundamentals/navigation?view=aspnetcore-6.0#query-strings>.
 
 ### Binding to select multiple
 
 Binding supports multiple option selection with `<input>` elements. For more information, see the following resources:
 
 * <xref:blazor/components/data-binding?view=aspnetcore-6.0#multiple-option-selection-with-input-elements>
-* <xref:blazor/forms-validation?view=aspnetcore-6.0#multiple-option-selection-with-the-inputselect-component>
+* <xref:blazor/forms/input-components?view=aspnetcore-6.0#multiple-option-selection-with-the-inputselect-component>
 
 ### Head (`<head>`) content control
 
@@ -200,7 +206,7 @@ Experimental support is available for building custom elements, which use standa
 
 ### Infer component generic types from ancestor components
 
-An ancestor component can cascade a type parameter by name to descendants using the new `[CascadingTypeParameter]` attribute. For more information, see <xref:blazor/components/templated-components?view=aspnetcore-6.0#infer-generic-types-based-on-ancestor-components>.
+An ancestor component can cascade a type parameter by name to descendants using the new `[CascadingTypeParameter]` attribute. For more information, see <xref:blazor/components/index?view=aspnetcore-6.0#cascaded-generic-type-support>.
 
 ### Dynamically rendered components
 
@@ -239,36 +245,30 @@ Generic type parameters are now supported. For more information, see <xref:blazo
 
 ### WebAssembly deployment layout
 
-Use a deployment layout to enable Blazor WebAssembly app downloads in restricted security environments. For more information, see <xref:blazor/host-and-deploy/webassembly-deployment-layout?view=aspnetcore-6.0>.
-
-### Blazor hybrid desktop apps (.NET MAUI)
-
-.NET Multi-platform App UI (.NET MAUI) is a cross-platform framework for creating native mobile and desktop apps with C# and XAML.
-
-> [!NOTE]
-> The .NET MAUI framework is in preview and shouldn't be used in production apps until final release.
-
-For more information, see the following resources:
-
-* [What is .NET MAUI?](/dotnet/maui/what-is-maui)
-* [Microsoft .NET Blog (category: ".NET MAUI")](https://devblogs.microsoft.com/dotnet/category/maui/)
-
-<!-- HOLD
-### Blazor WebAssembly packaging
-
-HOLD
-
-### Dynamically added root components
-
-HOLD
--->
+Use a deployment layout to enable Blazor WebAssembly app downloads in restricted security environments. For more information, see <xref:blazor/host-and-deploy/webassembly/deployment-layout?view=aspnetcore-6.0>.
 
 ### New Blazor articles
 
 In addition to the Blazor features described in the preceding sections, new Blazor articles are available on the following subjects:
 
 * <xref:blazor/file-downloads>: Learn how to download a file using native `byte[]` streaming interop to ensure efficient transfer to the client.
-* <xref:blazor/images>: Discover how to work with images in Blazor apps, including how to stream image data and preview an image.
+* <xref:blazor/images-and-documents>: Discover how to work with images and documents in Blazor apps, including how to stream image and document data.
+
+## Build Blazor Hybrid apps with .NET MAUI, WPF, and Windows Forms
+
+Use Blazor Hybrid to blend desktop and mobile native client frameworks with .NET and Blazor:
+
+* .NET Multi-platform App UI (.NET MAUI) is a cross-platform framework for creating native mobile and desktop apps with C# and XAML.
+* Blazor Hybrid apps can be built with Windows Presentation Foundation (WPF) and Windows Forms frameworks.
+
+> [!IMPORTANT]
+> Blazor Hybrid is in preview and shouldn't be used in production apps until final release.
+
+For more information, see the following resources:
+
+* [Preview ASP.NET Core Blazor Hybrid documentation](xref:blazor/hybrid/index)
+* [What is .NET MAUI?](/dotnet/maui/what-is-maui)
+* [Microsoft .NET Blog (category: ".NET MAUI")](https://devblogs.microsoft.com/dotnet/category/maui/)
 
 ## Kestrel
 
@@ -387,9 +387,9 @@ See [Template generated ports for Kestrel](#tgp) in this document for more infor
 
 ### Authentication servers
 
-.NET 3 to .NET 5 used [IdentityServer4](https://identityserver4.readthedocs.io/latest/) as part of our template to support the issuing of JWT tokens for SPA and Blazor applications. The templates now use the [Duende Identity Server](https://docs.duendesoftware.com/identityserver/v5).
+.NET 3 to .NET 5 used [IdentityServer4](https://identityserver4.readthedocs.io) as part of our template to support the issuing of JWT tokens for SPA and Blazor applications. The templates now use the [Duende Identity Server](https://docs.duendesoftware.com).
 
-If you are extending the identity models and are updating existing projects you need to update the namespaces in your code from `IdentityServer4.IdentityServer` to `Duende.IdentityServer` and follow their [migration instructions](https://docs.duendesoftware.com/identityserver/v5/upgrades/).
+If you are extending the identity models and are updating existing projects, update the namespaces in your code from `IdentityServer4.IdentityServer` to `Duende.IdentityServer` and follow their migration instructions.
 
 The license model for Duende Identity Server has changed to a reciprocal license, which may require license fees when it's used commercially in production. See the [Duende license page](https://duendesoftware.com/products/identityserver#pricing) for more details.
 
@@ -407,7 +407,7 @@ Cookie authentication sliding expiration can now be customized or suppressed usi
 
 ### Hot Reload
 
-Quickly make UI and code updates to running apps without losing app state for faster and more productive developer experience using [Hot Reload](xref:test/hot-reload). For more information, see [Update on .NET Hot Reload progress and Visual Studio 2022 Highlights](https://devblogs.microsoft.com/dotnet/update-on-net-hot-reload-progress-and-visual-studio-2022-highlights/).
+Quickly make UI and code updates to running apps without losing app state for faster and more productive developer experience using [Hot Reload](xref:test/hot-reload). For more information, see <xref:test/hot-reload> and [Update on .NET Hot Reload progress and Visual Studio 2022 Highlights](https://devblogs.microsoft.com/dotnet/update-on-net-hot-reload-progress-and-visual-studio-2022-highlights/).
 
 <!-- Notes:
 ### Single-file publishing
@@ -434,7 +434,7 @@ See the blog entry [HTTP/3 support in .NET 6](https://devblogs.microsoft.com/dot
 
 ### Nullable Reference Type Annotations
 
-Portions of the [ASP.NET Core 6.0 source code](https://github.com/dotnet/aspnetcore/tree/v6.0.0/src) has had [nullability annotations](/dotnet/csharp/nullable-migration-strategies) applied.
+Portions of the [ASP.NET Core in .NET 6 source code](https://github.com/dotnet/aspnetcore/tree/v6.0.0/src) has had [nullability annotations](/dotnet/csharp/nullable-migration-strategies) applied.
 
 By utilizing the new [Nullable feature in C# 8](/dotnet/csharp/whats-new/csharp-8#nullable-reference-types), ASP.NET Core can provide additional compile-time safety in the handling of reference types. For example, protecting against `null` reference exceptions. Projects that have opted in to using nullable annotations may see new build-time warnings from ASP.NET Core APIs.
 
@@ -473,7 +473,7 @@ The web app templates:
 
 Random ports are assigned during project creation for use by the Kestrel web server. Random ports help minimize a port conflict when multiple projects are run on the same machine.
 
-When a project is created, a random HTTP port between 5000-5300 and a random HTTPS port between 7000-7300 is specified in the generated *Properties/launchSettings.json* file. The ports can be changed in the *Properties/launchSettings.json* file. If no port is specified, Kestrel  defaults to the HTTP 5000 and HTTPS 5001 ports. For more information, see <xref:fundamentals/servers/kestrel/endpoints>.
+When a project is created, a random HTTP port between 5000-5300 and a random HTTPS port between 7000-7300 is specified in the generated `Properties/launchSettings.json` file. The ports can be changed in the `Properties/launchSettings.json` file. If no port is specified, Kestrel  defaults to the HTTP 5000 and HTTPS 5001 ports. For more information, see <xref:fundamentals/servers/kestrel/endpoints>.
 
 ### New logging defaults
 
@@ -490,7 +490,7 @@ The change from `"Microsoft": "Warning"` to `"Microsoft.AspNetCore": "Warning"` 
 <!-- TODO add and routing -->
 ### Developer exception page Middleware added automatically
 
-In the [develoment environment](xref:fundamentals/environments), the <xref:Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware> is added by default. It's no longer necessary to add the following code to web UI apps:
+In the [development environment](xref:fundamentals/environments), the <xref:Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware> is added by default. It's no longer necessary to add the following code to web UI apps:
 
 ```csharp
 if (app.Environment.IsDevelopment())
@@ -534,7 +534,7 @@ class MyViewComponent
 }
 ```
 
-With ASP.NET Core 6, the tag helper can be invoked without having to specify a value for the `showSomething` parameter:
+With ASP.NET Core in .NET 6, the tag helper can be invoked without having to specify a value for the `showSomething` parameter:
 
 ```razor
 <vc:my />
@@ -542,7 +542,7 @@ With ASP.NET Core 6, the tag helper can be invoked without having to specify a v
 
 ### Angular template updated to Angular 12
 
-The ASP.NET Core 6.0 template for Angular now uses [Angular 12](https://blog.angular.io/angular-v12-is-now-available-32ed51fbfd49).
+The ASP.NET Core in .NET 6 template for Angular now uses Angular 12.
 
 The React template has been updated to [React 17](https://reactjs.org/blog/2020/10/20/react-v17.html).
 
@@ -624,7 +624,7 @@ info: Microsoft.AspNetCore.HttpLogging.HttpLoggingMiddleware[2]
       Content-Type: text/plain; charset=utf-8
 ```
 
-The preceding output was enabled with the following *appsettings.development.json* file:
+The preceding output was enabled with the following `appsettings.Development.json` file:
 
 [!code-json[](aspnetcore-6.0/samples/WebApp1/appsettings.development.json?highlight=6)]
 
@@ -648,10 +648,6 @@ For example, the following app sets the <xref:System.Net.Sockets.Socket.LingerSt
 
 [!code-csharp[](aspnetcore-6.0/samples/WebApp1/Program.cs?name=snippet_icsf)]
 
-### Hot Reload
-
-Hot Reload minimizes the number of app restarts after code changes. For more information, see <xref:test/hot-reload>.
-
 ### Generic type constraints in Razor
 
 When defining generic type parameters in Razor using the `@typeparam` directive, generic type constraints can now be specified using the standard C# syntax:
@@ -661,7 +657,7 @@ When defining generic type parameters in Razor using the `@typeparam` directive,
 
  The SignalR, MessagePack, and Blazor Server scripts are now significantly smaller, enabling smaller downloads, less JavaScript parsing and compiling by the browser, and faster start-up. The size reductions:
 
-* `signalr.min.js`: 70%
+* `signalr.js`: 70%
 * `blazor.server.js`: 45%
 
 The smaller scripts are a result of a community contribution from [Ben Adams](https://twitter.com/ben_a_adams). For more information on the details of the size reduction, see [Ben's GitHub pull request](https://github.com/dotnet/aspnetcore/pull/30320).
@@ -705,6 +701,10 @@ In such scenarios, enable shadow copying by customizing the ASP.NET Core module 
 ```
 
 Shadow copying in IIS is an experimental feature that is not guaranteed to be part of ASP.NET Core. Please leave feedback on IIS Shadow copying in [this GitHub issue](https://github.com/dotnet/AspNetCore.Docs/issues/23733).
+
+## Breaking changes
+
+Use the articles in [Breaking changes in .NET](/dotnet/core/compatibility/breaking-changes) to find breaking changes that might apply when upgrading an app to a newer version of .NET.
 
 ## Additional resources
 
