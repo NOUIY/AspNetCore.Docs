@@ -1,199 +1,471 @@
 ---
 title: Role-based authorization in ASP.NET Core
-author: rick-anderson
-description: Learn how to restrict ASP.NET Core controller and action access by passing roles to the Authorize attribute.
-ms.author: riande
+ai-usage: ai-assisted
+author: wadepickett
+description: Learn how to restrict ASP.NET Core Blazor Razor component access with the AuthorizeView component and by passing roles to the Authorize attribute.
 monikerRange: '>= aspnetcore-3.1'
-ms.date: 10/14/2016
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.author: wpickett
+ms.date: 03/24/2026
 uid: security/authorization/roles
 ---
 # Role-based authorization in ASP.NET Core
 
-::: moniker range=">= aspnetcore-6.0"
+When a user's identity is created after authentication, the user may belong to one or more *roles*, reflecting various authorizations that the user has to access data and perform operations. For example, Tracy may belong to the "Administrator" and "User" roles with access to administrative web pages in the app, while Scott may only belong to the "User" role and not have access to administrative data or operations. How these roles are created and managed depends on the backing store of the authorization process. Roles are exposed to the developer through <xref:System.Security.Claims.ClaimsPrincipal.IsInRole%2A?displayProperty=nameWithType>. <xref:Microsoft.AspNetCore.Identity.IdentityBuilder.AddRoles%2A> must be called to add Role services when setting up the app's identity system.
 
-<a name="security-authorization-role-based"></a>
+While roles are claims, not all claims are roles. Depending on the identity issuer, a role may be a collection of users that may apply claims for group members, as well as an actual claim on an identity. However, claims are meant to be information about an individual user. Using roles to add claims to a user can confuse the boundary between the user and their individual claims. This confusion is why the single-page application (SPA) templates aren't designed around roles. In addition, for organizations migrating from an on-premises legacy system, the proliferation of roles over the years can mean a role claim may be too large to be contained within a token usable by a SPA. To secure SPAs, see <xref:security/authentication/identity/spa>.
 
-When an identity is created it may belong to one or more roles. For example, Tracy may belong to the `Administrator` and `User` roles while Scott may only belong to the `User` role. How these roles are created and managed depends on the backing store of the authorization process. Roles are exposed to the developer through the [IsInRole](/dotnet/api/system.security.principal.genericprincipal.isinrole) method on the [ClaimsPrincipal](/dotnet/api/system.security.claims.claimsprincipal) class. [AddRoles](/dotnet/api/microsoft.aspnetcore.identity.identitybuilder.addroles#Microsoft_AspNetCore_Identity_IdentityBuilder_AddRoles__1) must be added to Role services.
+This article uses Blazor Razor component examples and focuses on Blazor authorization scenarios. For additional Blazor guidance, see the following resources:
 
-While roles are claims, not all claims are roles. Depending on the identity issuer a role may be a collection of users that may apply claims for group members, as well as an actual claim on an identity. However, claims are meant to be information about an individual user. Using roles to add claims to a user can confuse the boundary between the user and their individual claims. This confusion is why the SPA templates are not designed around roles. In addition, for organizations migrating from an on-premises legacy system the proliferation of roles over the years can mean a role claim may be too large to be contained within a token usable by SPAs. To secure SPAs, see <xref:security/authentication/identity/spa>.
+* <xref:blazor/security/index>
+* <xref:blazor/security/webassembly/meid-groups-roles>
 
-## Adding role checks
+For Razor Pages and MVC guidance, which applies to all release versions of ASP.NET Core, see the following resources:
 
-Role based authorization checks:
+* <xref:razor-pages/security/authorization/roles>
+* <xref:mvc/security/authorization/roles>
+
+:::moniker range="< aspnetcore-6.0"
+
+Identity configuration changed with the release of .NET 6. Examples in this article demonstrate approaches that configure Identity services in the app's `Program` file. For .NET apps prior to the release of .NET 6 (and before Blazor Web Apps were released with .NET 8), services are configured in `Startup.ConfigureServices` of the `Startup.cs` file. The syntax for Identity configuration is shown in the companion [Razor Pages roles-based authorization article](xref:razor-pages/security/authorization/roles) and the [MVC roles-based authorization article](xref:mvc/security/authorization/roles). See the preceding resources and set the article version selector to the version of .NET that your app targets.
+
+:::moniker-end
+
+## Sample app
+
+The Blazor Web App sample for this article is the [`BlazorWebAppRolesWithIdentity` sample app (`dotnet/AspNetCore.Docs.Samples` GitHub repository)](https://github.com/dotnet/AspNetCore.Docs.Samples/tree/main/security/authorization/BlazorWebAppRolesWithIdentity) ([how to download](xref:index#how-to-download-a-sample)). The sample app uses seeded accounts with preconfigured roles to demonstrate most of the examples in this article. For more information, see the sample's README file (`README.md`).
+
+> [!CAUTION]
+> This sample app uses an in-memory database to store user information, which isn't suitable for production scenarios. The sample app is intended for demonstration purposes only and shouldn't be used as a starting point for production apps.
+
+## Add Role services to Identity
+
+:::moniker range=">= aspnetcore-6.0"
+
+Register role-based authorization services in the `Program` file by calling <xref:Microsoft.AspNetCore.Identity.IdentityBuilder.AddRoles%2A> with the role type in the app's Identity configuration. The role type in the following example is `IdentityRole`:
+
+```csharp
+builder.Services.AddDefaultIdentity<IdentityUser>( ... )
+    .AddRoles<IdentityRole>()
+    ...
+```
+
+The preceding code requires the [`Microsoft.AspNetCore.Identity.UI` NuGet package](https://www.nuget.org/packages/Microsoft.AspNetCore.Identity.UI) and a `using` directive for <xref:Microsoft.AspNetCore.Identity?displayProperty=fullName>.
+
+In cases where the app takes granular control to build Identity manually, call <xref:Microsoft.AspNetCore.Identity.IdentityBuilder.AddRoles%2A> on <xref:Microsoft.Extensions.DependencyInjection.IdentityServiceCollectionExtensions.AddIdentityCore%2A>:
+
+```csharp
+builder.Services.AddIdentityCore<IdentityUser>()
+    .AddRoles<IdentityRole>()
+    ...
+```
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-6.0"
+
+Register role-based authorization services in `Startup.ConfigureServices` (`Startup.cs`) by calling <xref:Microsoft.AspNetCore.Identity.IdentityBuilder.AddRoles%2A> with the role type in the app's Identity configuration. The role type in the following example is `IdentityRole`:
+
+```csharp
+services.AddDefaultIdentity<IdentityUser>()
+    .AddRoles<IdentityRole>()
+    ...
+```
+
+The preceding code requires the [`Microsoft.AspNetCore.Identity.UI` NuGet package](https://www.nuget.org/packages/Microsoft.AspNetCore.Identity.UI) and a `using` directive for <xref:Microsoft.AspNetCore.Identity?displayProperty=fullName>.
+
+In cases where the app takes granular control to build Identity manually, call <xref:Microsoft.AspNetCore.Identity.IdentityBuilder.AddRoles%2A> on <xref:Microsoft.Extensions.DependencyInjection.IdentityServiceCollectionExtensions.AddIdentityCore%2A>:
+
+```csharp
+services.AddIdentityCore<IdentityUser>()
+    .AddRoles<IdentityRole>()
+    ...
+```
+
+:::moniker-end
+
+## Role-based authorization checks
+
+Role-based authorization checks:
 
 * Are declarative and specify roles which the current user must be a member of to access the requested resource.
-* Are applied to Razor Pages, controllers, or actions within a controller.
-* Can ***not*** be applied at the Razor Page handler level, they must be applied to the Page.
+* Are applied to Razor components (examples in this article), [Razor Pages](xref:razor-pages/security/authorization/roles), or [MVC controllers or actions within a controller](xref:mvc/security/authorization/roles).
 
-For example, the following code limits access to any actions on the `AdministrationController` to users who are a member of the `Administrator` role:
+The <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView> component supports *role-based* authorization. This section covers basic concepts. For complete coverage, see <xref:blazor/security/index>.
 
-[!code-csharp[](~/security/authorization/roles/samples/6_0/WebAll/Controllers/AdministrationController.cs?name=snippet&highlight=1)]
+For role-based authorization of content in Razor components, use the <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView.Roles?displayProperty=nameWithType> parameter.
 
-Multiple roles can be specified as a comma separated list:
+In the following example:
 
-[!code-csharp[](~/security/authorization/roles/samples/6_0/WebAll/Controllers/SalaryController.cs?name=snippet&highlight=1)]
+* The user must have a role claim for either the `Admin` or `SuperUser` roles to see the content of the first <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView> component.
+* To require both `Admin` and `SuperUser` role claims, the second example nests <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView> components.
 
-The `SalaryController` is only accessible by users who are members of the `HRManager` role ***or*** the `Finance` role.
+`Pages/RoleChecksWithAuthorizeView.razor`:
 
-When multiple attributes are applied, an accessing user must be a member of ***all*** the roles specified. The following sample requires that a user must be a member of ***both*** the `PowerUser` ***and*** `ControlPanelUser` role:
+```razor
+@page "/role-checks-with-authorizeview"
 
-[!code-csharp[](~/security/authorization/roles/samples/6_0/WebAll/Controllers/ControlPanelController.cs?name=snippet&highlight=1-2)]
+<h3>Role Checks with AuthorizeView</h3>
 
-Access to an action can be limited by applying additional role authorization attributes at the action level:
+<AuthorizeView Roles="Admin, SuperUser">
+    <p>User: @context.User.Identity?.Name</p>
+    <p>You have an 'Admin' or 'SuperUser' role claim.</p>
+</AuthorizeView>
 
-[!code-csharp[](~/security/authorization/roles/samples/6_0/WebAll/Controllers/ControlAllPanelController.cs?name=snippet&highlight=1-2,7)]
+<AuthorizeView Roles="Admin">
+    <p>User: @context.User.Identity?.Name</p>
+    <p>You have the 'Admin' role claim.</p>
+    <AuthorizeView Roles="SuperUser" Context="innerContext">
+        <p>User: @innerContext.User.Identity?.Name</p>
+        <p>You have both 'Admin' and 'SuperUser' role claims.</p>
+    </AuthorizeView>
+</AuthorizeView>
+```
 
-In the preceding `ControlAllPanelController` controller:
+The preceding code establishes a `Context` for the inner <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView> component to prevent an <xref:Microsoft.AspNetCore.Components.Authorization.AuthenticationState> context collision. The <xref:Microsoft.AspNetCore.Components.Authorization.AuthenticationState> context is accessed in the outer <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView> with the standard approach for accessing the context (`@context.User`). The context is accessed in the inner <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView> with the named `innerContext` context (`@innerContext.User`).
 
-* Members of the `Administrator` role or the `PowerUser` role can access the controller and the `SetTime` action.
-* Only members of the `Administrator` role can access the `ShutDown` action.
+The [`[Authorize]` attribute](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute) supports role-based authorization for entire Razor components. Use the <xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute.Roles?displayProperty=nameWithType> parameter. The following code limits component access to users who are a member of the `Admin` role.
 
-A controller can be locked down but allow anonymous, unauthenticated access to individual actions:
+`Pages/RequireAdminRoleWithAuthorizeAttribute.razor`:
 
-[!code-csharp[](~/security/authorization/roles/samples/6_0/WebAll/Controllers/Control3PanelController.cs?name=snippet&highlight=1,7)]
+```razor
+@page "/require-admin-role-with-authorize-attribute"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
 
-For Razor Pages, [`[Authorize]`](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute) can be applied by either:
+<h1>Require 'Admin' role with [Authorize] attribute</h1>
 
-* Using a [convention](xref:razor-pages/razor-pages-conventions#page-model-action-conventions), or
-* Applying the [`[Authorize]`](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute) to the `PageModel` instance:
+<p>You can only see this if you're in the 'Admin' role.</p>
+```
 
-[!code-csharp[](~/security/authorization/roles/samples/6_0/WebAll/Pages/X/Update.cshtml.cs?name=snippet&highlight=1)]
+Multiple roles can be specified as a comma separated list. In the following example, access is limited to users who are members of the `Admin` role *or* the `SuperUser` role.
 
-> [!IMPORTANT]
-> Filter attributes, including `AuthorizeAttribute`, can only be applied to PageModel and cannot be applied to specific page handler methods.
+`Pages/RequireAdminOrSuperUserRoleWithAuthorizeAttribute.razor`:
 
-<a name="security-authorization-role-policy"></a>
+```razor
+@page "/require-admin-or-superuser-role-with-authorize-attribute"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin, SuperUser")]
 
-## Policy based role checks
+<h1>Require 'Admin' or 'SuperUser' role with [Authorize] attribute</h1>
 
-Role requirements can also be expressed using the Policy syntax, where a developer registers a policy at application startup as part of the Authorization service configuration. This typically occurs in in the *Program.cs* file:
+<p>
+    You can only see this if you're in the 'Admin' role or the 'SuperUser' role.
+</p>
+```
 
-[!code-csharp[](~/security/authorization/roles/samples/6_0/WebAll/Program.cs?name=snippet&highlight=6-10)]
+When multiple attributes are applied, the user must be a member of *all* of the roles specified. The following example requires *both* `Admin` *and* `SuperUser` roles.
 
-Policies are applied using the <xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute.Policy> property on the [`[Authorize]`](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute) attribute:
+`Pages/RequireAdminAndSuperUserRolesWithAuthorizeAttributes.razor`:
 
-[!code-csharp[](~/security/authorization/roles/samples/6_0/WebAll/Controllers/Home2Controller.cs?name=snippet&highlight=1)]
+```razor
+@page "/require-admin-and-superuser-roles-with-authorize-attributes"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
+@attribute [Authorize(Roles = "SuperUser")]
 
-To specify multiple allowed roles in a requirement, specify them as parameters to the <xref:Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder.RequireRole%2A> method:
+<h1>Require 'Admin' and 'SuperUser' roles with [Authorize] attributes</h1>
 
-[!code-csharp[](~/security/authorization/roles/samples/6_0/WebAll/Program.cs?name=snippet2&highlight=6-10)]
+<p>
+    You can only see this if you're in both the 'Admin' role 
+    and the 'SuperUser' role.
+</p>
+```
 
-The preceding code authorizes users who belong to the `Administrator`, `PowerUser` or `BackupAdministrator` roles.
+Role matching is typically case-sensitive because role names are stored and compared using .NET string comparisons. For example, `Admin` (uppercase `A`) isn't treated as the same role as `admin` (lowercase `a`). For more information, see <xref:security/authorization/claims#claim-case-sensitivity>.
 
-### Add Role services to Identity
+## Policy-based authorization checks
 
-Append [AddRoles](/dotnet/api/microsoft.aspnetcore.identity.identitybuilder.addroles#Microsoft_AspNetCore_Identity_IdentityBuilder_AddRoles__1) to add Role services:
+Role requirements can be expressed using policy syntax, where the app registers a policy at startup as part of the Authorization service configuration.
 
-[!code-csharp[](~/security/authorization/roles/samples/6_0/WebAll/Program.cs?name=snippet_ef&highlight=12)]
+In the following example:
 
-::: moniker-end
+* The `RequireAdminRole` policy specifies that users must be in the `Admin` role.
+* The `RequireSuperUserRole` policy specifies that users must be in the `SuperUser` role.
 
-::: moniker range="< aspnetcore-6.0"
-
-<a name="security-authorization-role-based"></a>
-
-When an identity is created it may belong to one or more roles. For example, Tracy may belong to the Administrator and User roles whilst Scott may only belong to the User role. How these roles are created and managed depends on the backing store of the authorization process. Roles are exposed to the developer through the [IsInRole](/dotnet/api/system.security.principal.genericprincipal.isinrole) method on the [ClaimsPrincipal](/dotnet/api/system.security.claims.claimsprincipal) class.
-
-We recommend not using Roles as claims, but rather using a [claims](xref:security/authorization/claims). When using Single Page Apps (SPAs), see <xref:security/authentication/identity/spa>.
-
-## Adding role checks
-
-Role based authorization checks:
-
-* Are declarative.
-* Are applied to Razor Pages, controllers, or actions within a controller.
-* Can ***not*** be applied at the Razor Page handler level, they must be applied to the Page.
-
-Role-based authorization checks specify which roles which the current user must be a member of to access the requested resource.
-
-For example, the following code limits access to any actions on the `AdministrationController` to users who are a member of the `Administrator` role:
-
-[!code-csharp[](~/security/authorization/roles/samples/6_0/WebAll/Controllers/AdministrationController.cs?name=snippet&highlight=1)]
-
-Multiple roles can be specified as a comma separated list:
-
-[!code-csharp[](~/security/authorization/roles/samples/6_0/WebAll/Controllers/SalaryController.cs?name=snippet&highlight=1)]
-
-The controller `SalaryController` is only accessible by users who are members of the `HRManager` role ***or*** the `Finance` role.
-
-If you apply multiple attributes then an accessing user must be a member of all the roles specified. The following sample requires that a user must be a member of both the `PowerUser` and `ControlPanelUser` role:
-
-[!code-csharp[](~/security/authorization/roles/samples/6_0/WebAll/Controllers/ControlPanelController.cs?name=snippet&highlight=1-2)]
-
-You can further limit access by applying additional role authorization attributes at the action level:
-
-[!code-csharp[](~/security/authorization/roles/samples/6_0/WebAll/Controllers/ControlAllPanelController.cs?name=snippet&highlight=1-2)]
-
-In the preceding `ControlAllPanelController` controller:
-
-* Members of the `Administrator` role or the `PowerUser` role can access the controller and the `SetTime` action.
-* Only members of the `Administrator` role can access the `ShutDown` action.
-
-You can also lock down a controller but allow anonymous, unauthenticated access to individual actions.
-
-[!code-csharp[](~/security/authorization/roles/samples/6_0/WebAll/Controllers/Control3PanelController.cs?name=snippet&highlight=1,9)]
-
-For Razor Pages, the [`[Authorize]`](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute) can be applied by either:
-
-* Using a [convention](xref:razor-pages/razor-pages-conventions#page-model-action-conventions), or
-* Applying the [`[Authorize]`](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute)to the `PageModel` instance:
+:::moniker range=">= aspnetcore-7.0"
 
 ```csharp
-[Authorize(Policy = "RequireAdministratorRole")]
-public class UpdateModel : PageModel
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("RequireAdminRole",
+         policy => policy.RequireRole("Admin"))
+    .AddPolicy("RequireSuperUserRole",
+         policy => policy.RequireRole("SuperUser"));
+```
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+```csharp
+builder.Services.AddAuthorization(options =>
 {
-    public ActionResult OnPost()
+    options.AddPolicy("RequireAdminRole",
+        policy => policy.RequireRole("Admin"));
+    options.AddPolicy("RequireSuperUserRole",
+        policy => policy.RequireRole("SuperUser"));
+});
+```
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-6.0"
+
+```csharp
+services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdminRole",
+        policy => policy.RequireRole("Admin"));
+    options.AddPolicy("RequireSuperUserRole",
+        policy => policy.RequireRole("SuperUser"));
+});
+```
+
+:::moniker-end
+
+For policy-based authorization using an <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView> component, use the <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView.Policy?displayProperty=nameWithType> parameter with a single policy name.
+
+`Pages/PassRequireAdminRolePolicy.razor`:
+
+```razor
+@page "/pass-requireadminrole-policy-with-authorizeview"
+
+<h1>Pass 'RequireAdminRole' policy with AuthorizeView</h1>
+
+<AuthorizeView Policy="RequireAdminRole">
+    <p>You satisfy the 'RequireAdminRole' policy.</p>
+</AuthorizeView>
+```
+
+To handle the case where the user should satisfy one of several policies, create a policy that confirms that the user satisfies other policies.
+
+To handle the case where the user must satisfy several policies simultaneously, take *either* of the following approaches:
+
+* Create a policy for <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView> that confirms that the user satisfies several other policies.
+
+* Nest the policies in multiple <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView> components.
+
+  `Pages/PassRequireAdminRoleAndRequireSuperUserRolePoliciesWithAuthorizeViews.razor`:
+
+  ```razor
+  @page "/pass-requireadminrole-and-requiresuperuserrole-policies-with-authorizeviews"
+
+  <h1>
+      Pass 'RequireAdminRole' and 'RequireSuperUserRole' policies with AuthorizeViews
+  </h1>
+
+  <AuthorizeView Policy="RequireAdminRole">
+      <AuthorizeView Policy="RequireSuperUserRole" Context="innerContext">
+          <p>
+              You satisfy the 'RequireAdminRole' and 
+              'RequireSuperUserRole' policies.
+          </p>
+      </AuthorizeView>
+  </AuthorizeView>
+  ```
+
+If both <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView.Roles> and <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView.Policy> are set, authorization succeeds only when both conditions are satisfied. That is, the user must belong to at least one of the specified roles *and* meet the requirements defined by the policy.
+
+If neither <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView.Roles> nor <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView.Policy> is specified, <xref:Microsoft.AspNetCore.Components.Authorization.AuthorizeView> uses the default policy:
+
+* Authenticated (signed-in) users are authorized.
+* Unauthenticated (signed-out) users are unauthorized.
+
+In contrast to role matching, which is typically case-sensitive, ASP.NET Core policy name lookup is typically case-insensitive, so `RequireAdminRole` and `requireadminrole` refer to the same policy.
+
+Policies are applied to an entire Razor component using the <xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute.Policy> property on the [`[Authorize]` attribute](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute).
+
+`Pages/PassRequireAdminRolePolicyWithAuthorizeAttribute.razor`:
+
+```razor
+@page "/pass-requireadminrole-policy-with-authorize-attribute"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Policy = "RequireAdminRole")]
+
+<h1>Pass RequireAdminRole policy with [Authorize] attribute</h1>
+
+<p>You can only see this if the 'RequireAdminRole' policy is satisfied.</p>
+```
+
+To specify multiple allowed roles in a requirement, specify the roles as parameters to the <xref:Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder.RequireRole%2A> method. In the following example, users are authorized if they belong to the `Admin` *or* `SuperUser` roles:
+
+:::moniker range=">= aspnetcore-7.0"
+
+```csharp
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("ElevatedRights", policy =>
+        policy.RequireRole("Admin", "SuperUser"));
+```
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+```csharp
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ElevatedRights", policy =>
+        policy.RequireRole("Admin", "SuperUser"));
+});
+```
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-6.0"
+
+```csharp
+services.AddAuthorization(options =>
+{
+    options.AddPolicy("ElevatedRights", policy =>
+        policy.RequireRole("Admin", "SuperUser"));
+});
+```
+
+:::moniker-end
+
+If you want the policy to require all of the preceding roles, either chain the roles to the policy builder or specify them to the policy builder individually in a [statement lambda](/dotnet/csharp/language-reference/operators/lambda-expressions#statement-lambdas).
+
+Chained to the policy builder:
+
+:::moniker range=">= aspnetcore-7.0"
+
+```csharp
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("ElevatedRights", policy => 
+        policy
+            .RequireRole("Admin")
+            .RequireRole("SuperUser"));
+```
+
+Alternatively, use a statement lambda:
+
+```csharp
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("ElevatedRights",
+        policy =>
+        {
+            policy.RequireRole("Admin");
+            policy.RequireRole("SuperUser");
+        });
+```
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-7.0"
+
+```csharp
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ElevatedRights", policy => 
+        policy
+            .RequireRole("Admin")
+            .RequireRole("SuperUser"));
+});
+```
+
+Alternatively, use a statement lambda:
+
+```csharp
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ElevatedRights",
+        policy =>
+        {
+            policy.RequireRole("Admin");
+            policy.RequireRole("SuperUser");
+        });
+});
+```
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-6.0"
+
+```csharp
+services.AddAuthorization(options =>
+{
+    options.AddPolicy("ElevatedRights", policy => 
+        policy
+            .RequireRole("Admin")
+            .RequireRole("SuperUser"));
+});
+```
+
+Alternatively, use a statement lambda:
+
+```csharp
+services.AddAuthorization(options =>
+{
+    options.AddPolicy("ElevatedRights",
+        policy =>
+        {
+            policy.RequireRole("Admin");
+            policy.RequireRole("SuperUser");
+        });
+});
+```
+
+:::moniker-end
+
+## Windows Authentication security groups as app roles
+
+:::moniker range=">= aspnetcore-9.0"
+
+After the app is [configured for Windows Authentication](xref:security/authentication/windowsauth) ([Blazor-specific guidance](xref:blazor/security/blazor-web-app-windows-authentication)) with the client and server machines part of the same Windows domain, user security groups are automatically included as claims in the user's <xref:System.Security.Claims.ClaimsPrincipal>.
+
+:::moniker-end
+
+:::moniker range="< aspnetcore-9.0"
+
+After the app is [configured for Windows Authentication](xref:security/authentication/windowsauth) with the client and server machines part of the same Windows domain, user security groups are automatically included as claims in the user's <xref:System.Security.Claims.ClaimsPrincipal>.
+
+:::moniker-end
+
+The `User.Identity` is typically a <xref:System.Security.Principal.WindowsIdentity> when using Windows Authentication, and you can retrieve the SID group claims or check if a user is in a role with the following code, where the `{DOMAIN}` placeholder is the domain and the `{SID GROUP NAME}` is the SID group name:
+
+```csharp
+if (User.Identity is WindowsIdentity windowsIdentity)
+{
+    var groups = windowsIdentity.Groups;
+
+    // If needed, obtain a list of the SID groups
+    var securityGroups = 
+        groups.Select(g => g.Translate(typeof(NTAccount)).ToString()).ToList();
+
+    // If needed, obtain the user's Windows identity name
+    var windowsIdentityName = windowsIdentity.Name;
+
+    // Check if the user is in a specific SID group
+    if (User.IsInRole(@"{DOMAIN}\{SID GROUP NAME}"))
     {
+        // User is in the specified group
+    }
+    else
+    {
+        // User isn't in the specified group
     }
 }
-```
-
-> [!IMPORTANT]
-> Filter attributes, including `AuthorizeAttribute`, can only be applied to PageModel and cannot be applied to specific page handler methods.
-
-<a name="security-authorization-role-policy"></a>
-
-## Policy based role checks
-
-Role requirements can also be expressed using the new Policy syntax, where a developer registers a policy at startup as part of the Authorization service configuration. This normally occurs in `ConfigureServices()` in your *Startup.cs* file.
-
-```csharp
-public void ConfigureServices(IServiceCollection services)
+else
 {
-    services.AddControllersWithViews();
-    services.AddRazorPages();
-
-    services.AddAuthorization(options =>
-    {
-        options.AddPolicy("RequireAdministratorRole",
-             policy => policy.RequireRole("Administrator"));
-    });
+    // The user isn't authenticated with Windows Authentication
 }
 ```
 
-Policies are applied using the `Policy` property on the [`[Authorize]`](xref:Microsoft.AspNetCore.Authorization.AuthorizeAttribute)attribute:
+:::moniker range=">= aspnetcore-9.0"
 
-```csharp
-[Authorize(Policy = "RequireAdministratorRole")]
-public IActionResult Shutdown()
-{
-    return View();
-}
-```
+For a demonstration of related code that translates SID group claims into human-readable values in a Blazor app, see the `UserClaims` component in <xref:blazor/security/blazor-web-app-windows-authentication>. Such an approach to retrieving SID group claims can be combined with [adding claims with an `IClaimsTransformation`](xref:security/authentication/claims#extend-or-add-custom-claims-using-iclaimstransformation) to create custom role claims when a user is authenticated.
 
-If you want to specify multiple allowed roles in a requirement then you can specify them as parameters to the `RequireRole` method:
+:::moniker-end
 
-```csharp
-options.AddPolicy("ElevatedRights", policy =>
-                  policy.RequireRole("Administrator", "PowerUser", "BackupAdministrator"));
-```
+:::moniker range="< aspnetcore-9.0"
 
-This example authorizes users who belong to the `Administrator`, `PowerUser` or `BackupAdministrator` roles.
+An approach similar to the preceding example for retrieving SID group claims can be combined with [adding claims with an `IClaimsTransformation`](xref:security/authentication/claims#extend-or-add-custom-claims-using-iclaimstransformation) to create custom role claims when a user is authenticated.
 
-### Add Role services to Identity
+:::moniker-end
 
-Append [AddRoles](/dotnet/api/microsoft.aspnetcore.identity.identitybuilder.addroles#Microsoft_AspNetCore_Identity_IdentityBuilder_AddRoles__1) to add Role services:
+## Additional resources
 
-[!code-csharp[](roles/samples/3_0/Startup.cs?name=snippet&highlight=7)]
-::: moniker-end
+* <xref:blazor/security/index>
+* <xref:blazor/security/webassembly/meid-groups-roles>
+* <xref:razor-pages/security/authorization/roles>
+* <xref:mvc/security/authorization/roles>
+* [Extend or add custom claims, including role claims, using `IClaimsTransformation`](xref:security/authentication/claims#extend-or-add-custom-claims-using-iclaimstransformation)
