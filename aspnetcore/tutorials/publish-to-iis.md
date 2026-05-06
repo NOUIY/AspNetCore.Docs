@@ -1,28 +1,28 @@
 ---
 title: Publish an ASP.NET Core app to IIS
-author: rick-anderson
+ai-usage: ai-assisted
+author: wadepickett
 description: Learn how to host an ASP.NET Core app on an IIS server.
-monikerRange: '>= aspnetcore-2.1'
-ms.author: riande
+monikerRange: '>= aspnetcore-8.0'
+ms.author: wpickett
 ms.custom: mvc
-ms.date: 10/03/2019
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.date: 02/23/2026
 uid: tutorials/publish-to-iis
 ---
 # Publish an ASP.NET Core app to IIS
 
-This tutorial shows how to host an ASP.NET Core app on an IIS server.
+Internet Information Services (IIS) is a flexible, general-purpose web server that runs on Windows and can host ASP.NET Core apps. IIS is a good choice when you need to run ASP.NET Core apps on Windows Server in an on-premises or hybrid environment, need Windows Authentication, or require integration with other IIS features such as URL Rewrite, Application Request Routing, or centralized certificate management.
 
 This tutorial covers the following subjects:
 
 > [!div class="checklist"]
-> * Install the .NET Core Hosting Bundle on Windows Server.
+> * Install the .NET Hosting Bundle on Windows Server.
 > * Create an IIS site in IIS Manager.
 > * Deploy an ASP.NET Core app.
 
 ## Prerequisites
 
-* [.NET Core SDK](/dotnet/core/sdk) installed on the development machine.
+* [.NET SDK](/dotnet/core/sdk) installed on the development machine.
 * Windows Server configured with the **Web Server (IIS)** server role. If your server isn't configured to host websites with IIS, follow the guidance in the *IIS configuration* section of the <xref:host-and-deploy/iis/index#iis-configuration> article and then return to this tutorial.
 
 > [!WARNING]
@@ -34,13 +34,15 @@ This tutorial covers the following subjects:
 > * [Configuration of the app pool's Access Control List (ACL)](xref:host-and-deploy/iis/advanced#application-pool-identity)
 > * To focus on IIS deployment concepts, this tutorial deploys an app without HTTPS security configured in IIS. For more information on hosting an app enabled for HTTPS protocol, see the security topics in the [Additional resources](#additional-resources) section of this article. Further guidance for hosting ASP.NET Core apps is provided in the <xref:host-and-deploy/iis/index> article.
 
-## Install the .NET Core Hosting Bundle
+## Install the .NET Hosting Bundle
 
-Install the *.NET Core Hosting Bundle* on the IIS server. The bundle installs the .NET Core Runtime, .NET Core Library, and the [ASP.NET Core Module](xref:host-and-deploy/aspnet-core-module). The module allows ASP.NET Core apps to run behind IIS.
+Install the *.NET Hosting Bundle* on the IIS server. The bundle installs the .NET Runtime, .NET Library, and the [ASP.NET Core Module](xref:host-and-deploy/aspnet-core-module). The module allows ASP.NET Core apps to run behind IIS.
+
+ASP.NET Core apps hosted in IIS use the *in-process hosting model* by default (since ASP.NET Core 3.0). In-process hosting runs the app in the same process as the IIS worker process (`w3wp.exe`), which provides better performance than out-of-process hosting. For more information, see <xref:host-and-deploy/iis/index>.
 
 Download the installer using the following link:
 
-[Current .NET Core Hosting Bundle installer (direct download)](https://dotnet.microsoft.com/permalink/dotnetcore-current-windows-runtime-bundle-installer)
+[Current .NET Hosting Bundle installer (direct download)](https://dotnet.microsoft.com/permalink/dotnetcore-current-windows-runtime-bundle-installer)
 
 1. Run the installer on the IIS server.
 
@@ -55,33 +57,40 @@ Download the installer using the following link:
 1. Provide a **Site name** and set the **Physical path** to the app's deployment folder that you created. Provide the **Binding** configuration and create the website by selecting **OK**.
 
    > [!WARNING]
-   > Top-level wildcard bindings (`http://*:80/` and `http://+:80`) should **not** be used. Top-level wildcard bindings can open up your app to security vulnerabilities. This applies to both strong and weak wildcards. Use explicit host names rather than wildcards. Subdomain wildcard binding (for example, `*.mysub.com`) doesn't have this security risk if you control the entire parent domain (as opposed to `*.com`, which is vulnerable). See [rfc7230 section-5.4](https://tools.ietf.org/html/rfc7230#section-5.4) for more information.
+   > Top-level wildcard bindings (`http://*:80/` and `http://+:80`) should **not** be used. Top-level wildcard bindings can open up your app to security vulnerabilities. This applies to both strong and weak wildcards. Use explicit host names rather than wildcards. Subdomain wildcard binding (for example, `*.mysub.com`) doesn't have this security risk if you control the entire parent domain (as opposed to `*.com`, which is vulnerable). See [RFC 9110: HTTP Semantics (Section 7.2. Host and :authority)](https://www.rfc-editor.org/rfc/rfc9110#field.host) for more information.
 
 1. Confirm the process model identity has the proper permissions.
 
    If the default identity of the app pool (**Process Model** > **Identity**) is changed from `ApplicationPoolIdentity` to another identity, verify that the new identity has the required permissions to access the app's folder, database, and other required resources. For example, the app pool requires read and write access to folders where the app reads and writes files.
 
-## Create an ASP.NET Core Razor Pages app
+## Create an ASP.NET Core app
 
-Follow the <xref:getting-started> tutorial to create a Razor Pages app.
+Create any type of ASP.NET Core server-based app.
+
+> [!NOTE]
+> This tutorial is based on hosting a server-side ASP.NET Core app with IIS, including a Blazor Web App. For guidance on hosting and deploying a *standalone Blazor WebAssembly app* with IIS, see <xref:blazor/host-and-deploy/webassembly/iis>.
 
 ## Publish and deploy the app
 
-*Publish an app* means to produce a compiled app that can be hosted by a server. *Deploy an app* means to move the published app to a hosting system. The publish step is handled by the [.NET Core SDK](/dotnet/core/sdk), while the deployment step can be handled by a variety of approaches. This tutorial adopts the *folder* deployment approach, where:
+*Publish an app* means to produce a compiled app that can be hosted by a server. *Deploy an app* means to move the published app to a hosting system. The publish step is handled by the [.NET SDK](/dotnet/core/sdk), while the deployment step can be handled by a variety of approaches. This tutorial adopts the *folder* deployment approach, where:
  
 * The app is published to a folder.
 * The folder's contents are moved to the IIS site's folder (the **Physical path** to the site in IIS Manager).
 
+ASP.NET Core apps can be published as *framework-dependent* (the server must have .NET installed) or *self-contained* (includes the .NET runtime in the published output). For most IIS deployments, the framework-dependent approach is recommended because the .NET Hosting Bundle provides the required runtime on the server. For more information, see [.NET application deployment](/dotnet/core/deploying/).
+
+A `web.config` file is generated automatically when the app is published. IIS uses this file to configure the ASP.NET Core Module for the app. Don't remove or manually edit the `web.config` file unless you're making advanced configuration changes.
+
 # [Visual Studio](#tab/visual-studio)
 
 1. Right-click on the project in **Solution Explorer** and select **Publish**.
-1. In the **Pick a publish target** dialog, select the **Folder** publish option.
-1. Set the **Folder or File Share** path.
+1. In the **Publish** dialog, select **Folder** as the publish target and select **Next**.
+1. Set the **Folder location** path.
    * If you created a folder for the IIS site that's available on the development machine as a network share, provide the path to the share. The current user must have write access to publish to the share.
-   * If you're unable to deploy directly to the IIS site folder on the IIS server, publish to a folder on removable media and physically move the published app to the IIS site folder on the server, which is the site's **Physical path** in IIS Manager. Move the contents of the `bin/Release/{TARGET FRAMEWORK}/publish` folder to the IIS site folder on the server, which is the site's **Physical path** in IIS Manager.
-1. Select the **Publish** button.
+   * If you're unable to deploy directly to the IIS site folder on the IIS server, publish to a folder on removable media and physically move the published app to the IIS site folder on the server, which is the site's **Physical path** in IIS Manager. Move the contents of the `bin/Release/{TARGET FRAMEWORK}/publish` folder (where `{TARGET FRAMEWORK}` is the target framework moniker, for example `net10.0`) to the IIS site folder on the server, which is the site's **Physical path** in IIS Manager.
+1. Select **Finish** and then select **Publish**.
 
-# [.NET Core CLI](#tab/netcore-cli)
+# [.NET CLI](#tab/net-cli)
 
 1. In a command shell, publish the app in Release configuration with the [dotnet publish](/dotnet/core/tools/dotnet-publish) command:
 
@@ -89,15 +98,7 @@ Follow the <xref:getting-started> tutorial to create a Razor Pages app.
    dotnet publish --configuration Release
    ```
 
-1. Move the contents of the `bin/Release/{TARGET FRAMEWORK}/publish` folder to the IIS site folder on the server, which is the site's **Physical path** in IIS Manager.
-
-# [Visual Studio for Mac](#tab/visual-studio-mac)
-
-1. Right-click on the project in **Solution** and select **Publish** > **Publish to Folder**.
-1. Set the **Choose a folder** path.
-   * If you created a folder for the IIS site that's available on the development machine as a network share, provide the path to the share. The current user must have write access to publish to the share.
-   * If you're unable to deploy directly to the IIS site folder on the IIS server, publish to a folder on removeable media and physically move the published app to the IIS site folder on the server, which is the site's **Physical path** in IIS Manager. Move the contents of the `bin/Release/{TARGET FRAMEWORK}/publish` folder to the IIS site folder on the server, which is the site's **Physical path** in IIS Manager.
-1. Select the **Publish** button.
+1. Move the contents of the `bin/Release/{TARGET FRAMEWORK}/publish` folder (where `{TARGET FRAMEWORK}` is the target framework moniker, for example `net10.0`) to the IIS site folder on the server, which is the site's **Physical path** in IIS Manager.
 
 ---
 
@@ -110,7 +111,7 @@ The app is accessible in a browser after it receives the first request. Make a r
 In this tutorial, you learned how to:
 
 > [!div class="checklist"]
-> * Install the .NET Core Hosting Bundle on Windows Server.
+> * Install the .NET Hosting Bundle on Windows Server.
 > * Create an IIS site in IIS Manager.
 > * Deploy an ASP.NET Core app.
 
@@ -127,13 +128,13 @@ To learn more about hosting ASP.NET Core apps on IIS, see the IIS Overview artic
 * <xref:host-and-deploy/directory-structure>
 * <xref:test/troubleshoot-azure-iis>
 * <xref:security/enforcing-ssl>
+* [WebSockets on IIS](xref:fundamentals/websockets#enabling-websockets-on-iis)
 
 ### Articles pertaining to ASP.NET Core app deployment
 
 * <xref:tutorials/publish-to-azure-webapp-using-vs>
 * <xref:tutorials/publish-to-azure-webapp-using-vscode>
 * <xref:host-and-deploy/visual-studio-publish-profiles>
-* [Publish a Web app to a folder using Visual Studio for Mac](/visualstudio/mac/publish-folder)
 
 ### Articles on IIS HTTPS configuration
 
@@ -149,10 +150,7 @@ To learn more about hosting ASP.NET Core apps on IIS, see the IIS Overview artic
 
 * [IIS documentation](/iis)
 * [Getting Started with the IIS Manager in IIS](/iis/get-started/getting-started-with-iis/getting-started-with-the-iis-manager-in-iis-7-and-iis-8)
-* [.NET Core application deployment](/dotnet/core/deploying/)
-* <xref:host-and-deploy/aspnet-core-module>
-* <xref:host-and-deploy/directory-structure>
+* [.NET application deployment](/dotnet/core/deploying/)
 * <xref:host-and-deploy/iis/modules>
-* <xref:test/troubleshoot-azure-iis>
 * <xref:host-and-deploy/azure-iis-errors-reference>
-
+* [Sticky sessions with Application Request Routing](/iis/extensions/configuring-application-request-routing-arr/http-load-balancing-using-application-request-routing)
