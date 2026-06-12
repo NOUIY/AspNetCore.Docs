@@ -1,15 +1,12 @@
----
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
----
 Visual Studio for Mac displays the following popup:
 
-![HTTPS Development certificate not found. Do you want to install and trust the certificate?](~/getting-started/_static/trustCertMac6.png)
+![HTTPS Development certificate not found. Do you want to install and trust the certificate?](~/static/trustCertMac6.png)
 
 Select **Install and Trust** if you trust the development certificate.
 
 The following dialog is displayed:
 
-![Security warning dialog](~/getting-started/_static/certMac6.png)
+![Security warning dialog](~/static/certMac6.png)
 
 Enter your password and select **Update Settings**
 
