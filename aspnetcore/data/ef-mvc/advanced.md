@@ -1,12 +1,11 @@
 ---
 title: "Tutorial: Learn about advanced scenarios - ASP.NET MVC with EF Core"
 description: "This tutorial introduces useful topics for going beyond the basics of developing ASP.NET Core web apps that use Entity Framework Core."
-author: rick-anderson
-ms.author: riande
+author: tdykstra
+ms.author: tdykstra
 ms.custom: mvc
 ms.date: 03/27/2019
 ms.topic: tutorial
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: data/ef-mvc/advanced
 ---
 
@@ -35,7 +34,7 @@ In this tutorial, you:
 
 One of the advantages of using the Entity Framework is that it avoids tying your code too closely to a particular method of storing data. It does this by generating SQL queries and commands for you, which also frees you from having to write them yourself. But there are exceptional scenarios when you need to run specific SQL queries that you have manually created. For these scenarios, the Entity Framework Code First API includes methods that enable you to pass SQL commands directly to the database. You have the following options in EF Core 1.0:
 
-* Use the `DbSet.FromSql` method for queries that return entity types. The returned objects must be of the type expected by the `DbSet` object, and they're automatically tracked by the database context unless you [turn tracking off](crud.md#no-tracking-queries).
+* Use the `DbSet.FromSql` method for queries that return entity types. The returned objects must be of the type expected by the `DbSet` object, and they're automatically tracked by the database context unless you [turn tracking off](crud.md#disable-tracking-of-entity-objects-no-tracking-queries).
 
 * Use the `Database.ExecuteSqlCommand` for non-query commands.
 
@@ -47,7 +46,7 @@ As is always true when you execute SQL commands in a web application, you must t
 
 The `DbSet<TEntity>` class provides a method that you can use to execute a query that returns an entity of type `TEntity`. To see how this works you'll change the code in the `Details` method of the Department controller.
 
-In *DepartmentsController.cs*, in the `Details` method, replace the code that retrieves a department with a `FromSql` method call, as shown in the following highlighted code:
+In `DepartmentsController.cs`, in the `Details` method, replace the code that retrieves a department with a `FromSql` method call, as shown in the following highlighted code:
 
 [!code-csharp[](intro/samples/cu/Controllers/DepartmentsController.cs?name=snippet_RawSQL&highlight=8,9,10)]
 
@@ -59,7 +58,7 @@ To verify that the new code works correctly, select the **Departments** tab and 
 
 Earlier you created a student statistics grid for the About page that showed the number of students for each enrollment date. You got the data from the Students entity set (`_context.Students`) and used LINQ to project the results into a list of `EnrollmentDateGroup` view model objects. Suppose you want to write the SQL itself rather than using LINQ. To do that you need to run a SQL query that returns something other than entity objects. In EF Core 1.0, one way to do that is to write ADO.NET code and get the database connection from EF.
 
-In *HomeController.cs*, replace the `About` method with the following code:
+In `HomeController.cs`, replace the `About` method with the following code:
 
 [!code-csharp[](intro/samples/cu/Controllers/HomeController.cs?name=snippet_UseRawSQL&highlight=3-32)]
 
@@ -77,7 +76,7 @@ Suppose Contoso University administrators want to perform global changes in the 
 
 ![Update Course Credits page](advanced/_static/update-credits.png)
 
-In *CoursesController.cs*, add UpdateCourseCredits methods for HttpGet and HttpPost:
+In `CoursesController.cs`, add UpdateCourseCredits methods for HttpGet and HttpPost:
 
 [!code-csharp[](intro/samples/cu/Controllers/CoursesController.cs?name=snippet_UpdateGet)]
 
@@ -89,9 +88,9 @@ When the **Update** button is clicked, the HttpPost method is called, and multip
 
 In **Solution Explorer**, right-click the *Views/Courses* folder, and then click **Add > New Item**.
 
-In the **Add New Item** dialog, click **ASP.NET Core** under **Installed** in the left pane, click **Razor View**, and name the new view *UpdateCourseCredits.cshtml*.
+In the **Add New Item** dialog, click **ASP.NET Core** under **Installed** in the left pane, click **Razor View**, and name the new view `UpdateCourseCredits.cshtml`.
 
-In *Views/Courses/UpdateCourseCredits.cshtml*, replace the template code with the following code:
+In `Views/Courses/UpdateCourseCredits.cshtml`, replace the template code with the following code:
 
 [!code-cshtml[](intro/samples/cu/Views/Courses/UpdateCourseCredits.cshtml)]
 
@@ -113,7 +112,7 @@ For more information about raw SQL queries, see [Raw SQL Queries](/ef/core/query
 
 Sometimes it's helpful to be able to see the actual SQL queries that are sent to the database. Built-in logging functionality for ASP.NET Core is automatically used by EF Core to write logs that contain the SQL for queries and updates. In this section you'll see some examples of SQL logging.
 
-Open *StudentsController.cs* and in the `Details` method set a breakpoint on the `if (student == null)` statement.
+Open `StudentsController.cs` and in the `Details` method set a breakpoint on the `if (student == null)` statement.
 
 Run the app in debug mode, and go to the Details page for a student.
 
@@ -225,7 +224,7 @@ Run the `migrations remove` command, save your code changes and rerun the `migra
 
 It's possible to get other errors when making schema changes in a database that has existing data. If you get migration errors you can't resolve, you can either change the database name in the connection string or delete the database. With a new database, there's no data to migrate, and the update-database command is much more likely to complete without errors.
 
-The simplest approach is to rename the database in *appsettings.json*. The next time you run `database update`, a new database will be created.
+The simplest approach is to rename the database in `appsettings.json`. The next time you run `database update`, a new database will be created.
 
 To delete a database in SSOX, right-click the database, click **Delete**, and then in the **Delete Database** dialog box select **Close existing connections** and click **OK**.
 
@@ -256,6 +255,8 @@ For more information about EF Core, see the [Entity Framework Core documentation
 For information on how to deploy a web app, see <xref:host-and-deploy/index>.
 
 For information about other topics related to ASP.NET Core MVC, such as authentication and authorization, see <xref:index>.
+
+[!INCLUDE[](~/includes/reliableWAP.md)]
 
 ## Next steps
 

@@ -1,15 +1,16 @@
 ---
 title: Advanced configuration
-author: rick-anderson
+author: tdykstra
 description: Advanced configuration with the ASP.NET Core Module and Internet Information Services (IIS).
 monikerRange: '>= aspnetcore-5.0'
-ms.author: riande
-ms.custom: mvc
-ms.date: 5/7/2020
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.author: tdykstra
+ms.custom: mvc, sfi-image-nochange
+ms.date: 04/21/2026
 uid: host-and-deploy/iis/advanced
 ---
 # Advanced configuration of the ASP.NET Core Module and IIS
+
+[!INCLUDE[](~/includes/not-latest-version.md)]
 
 This article covers advanced configuration options and scenarios for the ASP.NET Core Module and IIS.
 
@@ -17,7 +18,7 @@ This article covers advanced configuration options and scenarios for the ASP.NET
 
 *Only applies when using the in-process hosting model.*
 
-Configure the managed stack size using the `stackSize` setting in bytes in the `web.config` file. The default size is 1,048,576 bytes (1 MB). The following example changes the stack size to 2 MB (2,097,152 bytes):
+Configure the managed stack size using the `stackSize` setting in hexadecimal bytes in the `web.config` file. The default size is 0x100000 bytes (1 MB). The following example changes the stack size to 2 MB (2,097,152 bytes) in hexadecimal 0x200000:
 
 ```xml
 <aspNetCore processPath="dotnet"
@@ -26,7 +27,48 @@ Configure the managed stack size using the `stackSize` setting in bytes in the `
     stdoutLogFile="\\?\%home%\LogFiles\stdout"
     hostingModel="inprocess">
   <handlerSettings>
-    <handlerSetting name="stackSize" value="2097152" />
+    <handlerSetting name="stackSize" value="200000" />
+  </handlerSettings>
+</aspNetCore>
+```
+
+## Disallow rotation on config
+
+The `disallowRotationOnConfigChange` setting is intended for blue/green scenarios where a change to global config shouldn't cause all sites to recycle. When this flag is true, only changes relevant to the site itself will cause it to recycle. For example, a site recycles if its *web.config* changes or something changes that's relevant to the site's path from IIS's perspective. But a general change to *applicationHost.config* wouldn't cause an app to recycle. The following example sets this setting to true:
+
+```xml
+<aspNetCore processPath="dotnet"
+    arguments=".\MyApp.dll"
+    stdoutLogEnabled="false"
+    stdoutLogFile="\\?\%home%\LogFiles\stdout"
+    hostingModel="inprocess">
+  <handlerSettings>
+    <handlerSetting name="disallowRotationOnConfigChange" value="true" />
+  </handlerSettings>
+</aspNetCore>
+```
+
+This setting corresponds to the <xref:Microsoft.Web.Administration.ApplicationPoolRecycling.DisallowRotationOnConfigChange?displayProperty=nameWithType> API.
+
+## Reduce 503 likelihood during app recycle
+
+By default, there's a one-second delay between when IIS is notified of a recycle or shutdown and when ANCM tells the managed server to initiate shutdown. The delay is configurable via the `ANCM_shutdownDelay` environment variable or by setting the `shutdownDelay` handler setting. Both values are in milliseconds. The delay is primarily to reduce the likelihood of a race where:
+
+* IIS hasn't started queuing requests to go to the new app.
+* ANCM starts rejecting new requests that come into the old app.
+
+This setting doesn't mean incoming requests will be delayed by this amount. The setting indicates that the old app instance will start shutting down after the timeout occurs. Slower machines or machines with heavier CPU usage might need to adjust this value to reduce 503 likelihood.
+
+The following example sets the delay to 5 seconds:
+
+```xml
+<aspNetCore processPath="dotnet"
+    arguments=".\MyApp.dll"
+    stdoutLogEnabled="false"
+    stdoutLogFile="\\?\%home%\LogFiles\stdout"
+    hostingModel="inprocess">
+  <handlerSettings>
+    <handlerSetting name="shutdownDelay" value="5000" />
   </handlerSettings>
 </aspNetCore>
 ```
@@ -37,7 +79,7 @@ Configure the managed stack size using the `stackSize` setting in bytes in the `
 
 The proxy created between the ASP.NET Core Module and Kestrel uses the HTTP protocol. There's no risk of eavesdropping the traffic between the module and Kestrel from a location off of the server.
 
-A pairing token is used to guarantee that the requests received by Kestrel were proxied by IIS and didn't come from some other source. The pairing token is created and set into an environment variable (`ASPNETCORE_TOKEN`) by the module. The pairing token is also set into a header (`MS-ASPNETCORE-TOKEN`) on every proxied request. IIS Middleware checks each request it receives to confirm that the pairing token header value matches the environment variable value. If the token values are mismatched, the request is logged and rejected. The pairing token environment variable and the traffic between the module and Kestrel aren't accessible from a location off of the server. Without knowing the pairing token value, an attacker can't submit requests that bypass the check in the IIS Middleware.
+A pairing token is used to guarantee that the requests received by Kestrel were proxied by IIS and didn't come from some other source. The pairing token is created and set into an environment variable (`ASPNETCORE_TOKEN`) by the module. The pairing token is also set into a header (`MS-ASPNETCORE-TOKEN`) on every proxied request. IIS Middleware checks each request it receives to confirm that the pairing token header value matches the environment variable value. If the token values are mismatched, the request is logged and rejected. The pairing token environment variable and the traffic between the module and Kestrel aren't accessible from a location off of the server. Without knowing the pairing token value, a cyberattacker can't submit requests that bypass the check in the IIS Middleware.
 
 ## ASP.NET Core Module with an IIS Shared Configuration
 
@@ -62,15 +104,15 @@ The [ASP.NET Core Data Protection stack](xref:security/data-protection/introduct
 
 If the Data Protection key ring is stored in memory when the app restarts:
 
-* All cookie-based authentication tokens are invalidated. 
-* Users are required to sign in again on their next request. 
-* Any data protected with the key ring can no longer be decrypted. This may include [CSRF tokens](xref:security/anti-request-forgery#aspnet-core-antiforgery-configuration) and [ASP.NET Core MVC TempData cookies](xref:fundamentals/app-state#tempdata).
+* All cookie-based authentication tokens are invalidated.
+* Users are required to sign in again on their next request.
+* Any data protected with the key ring can no longer be decrypted. This might include [CSRF tokens](xref:security/anti-request-forgery#aspnet-core-antiforgery-configuration) and [ASP.NET Core MVC TempData cookies](xref:fundamentals/app-state#tempdata).
 
 To configure data protection under IIS to persist the key ring, use **one** of the following approaches:
 
 * **Create Data Protection Registry keys**
 
-  Data Protection keys used by ASP.NET Core apps are stored in the registry external to the apps. To persist the keys for a given app, create Registry keys for the app pool.
+  ASP.NET Core Data Protection keys used by ASP.NET Core apps are stored in the registry external to the apps. To persist the keys for a given app, create Registry keys for the app pool.
 
   For standalone, non-webfarm IIS installations, the [Data Protection Provision-AutoGenKeys.ps1 PowerShell script](https://github.com/dotnet/AspNetCore/blob/main/src/DataProtection/Provision-AutoGenKeys.ps1) can be used for each app pool used with an ASP.NET Core app. This script creates a Registry key in the HKLM registry that's accessible only to the worker process account of the app's app pool. Keys are encrypted at rest using DPAPI with a machine-wide key.
 
@@ -102,7 +144,7 @@ To configure data protection under IIS to persist the key ring, use **one** of t
 
 ## IIS configuration
 
-**Windows Server operating systems**
+### Windows Server operating systems
 
 Enable the **Web Server (IIS)** server role and establish role services.
 
@@ -122,7 +164,7 @@ Enable the **Web Server (IIS)** server role and establish role services.
 
 1. Proceed through the **Confirmation** step to install the web server role and services. A server/IIS restart isn't required after installing the **Web Server (IIS)** role.
 
-**Windows desktop operating systems**
+### Windows desktop operating systems
 
 Enable the **IIS Management Console** and **World Wide Web Services**.
 
@@ -154,13 +196,16 @@ Enable the **IIS Management Console** and **World Wide Web Services**.
 
 An ASP.NET Core app can be hosted as an [IIS sub-application (sub-app)](/iis/get-started/planning-your-iis-architecture/understanding-sites-applications-and-virtual-directories-on-iis#applications). The sub-app's path becomes part of the root app's URL.
 
-Static asset links within the sub-app should use tilde-slash (`~/`) notation. Tilde-slash notation triggers a [Tag Helper](xref:mvc/views/tag-helpers/intro) to prepend the sub-app's pathbase to the rendered relative link. For a sub-app at `/subapp_path`, an image linked with `src="~/image.png"` is rendered as `src="/subapp_path/image.png"`. The root app's Static File Middleware doesn't process the static file request. The request is processed by the sub-app's Static File Middleware.
+Static asset links within the sub-app should use tilde-slash (`~/`) notation in MVC and Razor Pages. Tilde-slash notation triggers a [Tag Helper](xref:mvc/views/tag-helpers/intro) to prepend the sub-app's pathbase to the rendered relative link. For a sub-app at `/subapp_path`, an image linked with `src="~/image.png"` is rendered as `src="/subapp_path/image.png"`. The root app's Static File Middleware doesn't process the static file request. The sub-app's Static File Middleware processes the request.
+
+> [!NOTE]
+> Razor components (`.razor`) shouldn't use tilde-slash notation. For more information, see <xref:blazor/host-and-deploy/app-base-path>.
 
 If a static asset's `src` attribute is set to an absolute path (for example, `src="/image.png"`), the link is rendered without the sub-app's pathbase. The root app's Static File Middleware attempts to serve the asset from the root app's [web root](xref:fundamentals/index#web-root), which results in a *404 - Not Found* response unless the static asset is available from the root app.
 
 To host an ASP.NET Core app as a sub-app under another ASP.NET Core app:
 
-1. Establish an app pool for the sub-app. Set the **.NET CLR Version** to **No Managed Code** because the Core Common Language Runtime (CoreCLR) for .NET Core is booted to host the app in the worker process, not the desktop CLR (.NET CLR).
+1. Establish an app pool for the sub-app. Set the **.NET CLR Version** to **No Managed Code** because the Core Common Language Runtime (CoreCLR) for .NET is booted to host the app in the worker process, not the desktop CLR (.NET CLR).
 
 1. Add the root site in IIS Manager with the sub-app in a folder under the root site.
 
@@ -174,10 +219,10 @@ For more information on the in-process hosting model and configuring the ASP.NET
 
 ## Application Pools
 
-App pool isolation is determined by the hosting model:
+The hosting model determines app pool isolation:
 
-* In-process hosting: Apps are required to run in separate app pools.
-* Out-of-process hosting: We recommend isolating the apps from each other by running each app in its own app pool.
+* **In-process hosting**: Apps are required to run in separate app pools.
+* **Out-of-process hosting**: We recommend isolating the apps from each other by running each app in its own app pool.
 
 The IIS **Add Website** dialog defaults to a single app pool per app. When a **Site name** is provided, the text is automatically transferred to the **Application pool** textbox. A new app pool is created using the site name when the site is added.
 
@@ -195,7 +240,7 @@ If the IIS worker process requires elevated access to the app, modify the Access
 
 1. Right-click on the directory and select **Properties**.
 
-1. Under the **Security** tab, select the **Edit** button and then the **Add** button.
+1. Under the **Security** tab, select the **Edit** button, and then the **Add** button.
 
 1. Select the **Locations** button and make sure the system is selected.
 
@@ -209,25 +254,25 @@ If the IIS worker process requires elevated access to the app, modify the Access
 
 1. Read &amp; execute permissions should be granted by default. Provide additional permissions as needed.
 
-Access can also be granted at a command prompt using the **ICACLS** tool. Using the *DefaultAppPool* as an example, the following command is used:
+Access can also be granted at a command prompt using the **ICACLS** tool. Using the *DefaultAppPool* as an example, the following command is used to grant read and execute permissions to the `MyWebApp` folder, subfolders, and files:
 
 ```console
-ICACLS C:\sites\MyWebApp /grant "IIS AppPool\DefaultAppPool":F
+ICACLS C:\sites\MyWebApp /grant "IIS AppPool\DefaultAppPool:(OI)(CI)RX"
 ```
 
-For more information, see the [icacls](/windows-server/administration/windows-commands/icacls) topic.
+For more information, see the [icacls](/windows-server/administration/windows-commands/icacls) article.
 
 ## HTTP/2 support
 
 [HTTP/2](https://httpwg.org/specs/rfc7540.html) is supported with ASP.NET Core in the following IIS deployment scenarios:
 
 * In-process
-  * Windows Server 2016/Windows 10 or later; IIS 10 or later
-  * TLS 1.2 or later connection
+  * Windows Server 2016/Windows 10 or later; IIS 10 or later.
+  * TLS 1.2 or later connection.
 * Out-of-process
-  * Windows Server 2016/Windows 10 or later; IIS 10 or later
+  * Windows Server 2016/Windows 10 or later; IIS 10 or later.
   * Public-facing edge server connections use HTTP/2, but the reverse proxy connection to the [Kestrel server](xref:fundamentals/servers/kestrel) uses HTTP/1.1.
-  * TLS 1.2 or later connection
+  * TLS 1.2 or later connection.
 
 For an in-process deployment when an HTTP/2 connection is established, [`HttpRequest.Protocol`](xref:Microsoft.AspNetCore.Http.HttpRequest.Protocol*) reports `HTTP/2`. For an out-of-process deployment when an HTTP/2 connection is established, [`HttpRequest.Protocol`](xref:Microsoft.AspNetCore.Http.HttpRequest.Protocol*) reports `HTTP/1.1`.
 
@@ -245,8 +290,8 @@ For an ASP.NET Core app that targets the .NET Framework, OPTIONS requests aren't
 
 When hosted in IIS by the ASP.NET Core Module version 2:
 
-* [Application Initialization Module](#application-initialization-module): App's hosted [in-process](xref:host-and-deploy/iis/in-process-hosting) or [out-of-process](xref:host-and-deploy/iis/out-of-process-hosting) can be configured to start automatically on a worker process restart or server restart.
-* [Idle Timeout](#idle-timeout): App's hosted [in-process](xref:host-and-deploy/iis/in-process-hosting) can be configured not to time out during periods of inactivity.
+* [**Application Initialization Module**](#application-initialization-module): App's hosted [in-process](xref:host-and-deploy/iis/in-process-hosting) or [out-of-process](xref:host-and-deploy/iis/out-of-process-hosting) can be configured to start automatically on a worker process restart or server restart.
+* [**Idle Timeout**](#idle-timeout): App's hosted [in-process](xref:host-and-deploy/iis/in-process-hosting) can be configured not to time out during periods of inactivity.
 
 ### Application Initialization Module
 
@@ -311,8 +356,8 @@ To prevent apps hosted [out-of-process](xref:host-and-deploy/iis/out-of-process-
 ### Application Initialization Module and Idle Timeout additional resources
 
 * [IIS 8.0 Application Initialization](/iis/get-started/whats-new-in-iis-8/iis-80-application-initialization)
-* [Application Initialization `<applicationInitialization>`](/iis/configuration/system.webserver/applicationinitialization/).
-* [Process Model Settings for an Application Pool `<processModel>`](/iis/configuration/system.applicationhost/applicationpools/add/processmodel).
+* [Application Initialization `<applicationInitialization>`](/iis/configuration/system.webserver/applicationinitialization/)
+* [Process Model Settings for an Application Pool `<processModel>`](/iis/configuration/system.applicationhost/applicationpools/add/processmodel)
 
 ## Module, schema, and configuration file locations
 
@@ -340,13 +385,13 @@ To prevent apps hosted [out-of-process](xref:host-and-deploy/iis/out-of-process-
 
 ### Schema
 
-**IIS**
+**IIS**:
 
 * `%windir%\System32\inetsrv\config\schema\aspnetcore_schema.xml`
 
 * `%windir%\System32\inetsrv\config\schema\aspnetcore_schema_v2.xml`
 
-**IIS Express**
+**IIS Express**:
 
 * `%ProgramFiles%\IIS Express\config\schema\aspnetcore_schema.xml`
 
@@ -354,14 +399,85 @@ To prevent apps hosted [out-of-process](xref:host-and-deploy/iis/out-of-process-
 
 ### Configuration
 
-**IIS**
+**IIS**:
 
 * `%windir%\System32\inetsrv\config\applicationHost.config`
 
-**IIS Express**
+**IIS Express**:
 
 * Visual Studio: `{APPLICATION ROOT}\.vs\config\applicationHost.config`
 
 * *iisexpress.exe* CLI: `%USERPROFILE%\Documents\IISExpress\config\applicationhost.config`
 
 The files can be found by searching for `aspnetcore` in the `applicationHost.config` file.
+
+## Install Web Deploy when publishing with Visual Studio
+
+When deploying apps to servers with [Web Deploy](/iis/install/installing-publishing-technologies/installing-and-configuring-web-deploy-on-iis-80-or-later), install the latest version of Web Deploy on the server. To install Web Deploy, see [IIS Downloads: Web Deploy](https://www.iis.net/downloads/microsoft/web-deploy).
+
+## Create the IIS site
+
+1. On the hosting system, create a folder to contain the app's published folders and files. In a following step, the folder's path is provided to IIS as the physical path to the app. For more information on an app's deployment folder and file layout, see <xref:host-and-deploy/directory-structure>.
+
+1. In IIS Manager, open the server's node in the **Connections** panel. Right-click the **Sites** folder. Select **Add Website** from the contextual menu.
+
+1. Provide a **Site name** and set the **Physical path** to the app's deployment folder. Provide the **Binding** configuration and create the website by selecting **OK**:
+
+   ![Supply the Site name, physical path, and Host name in the Add Website step.](index/_static/add-website-ws2016.png)
+
+   > [!WARNING]
+   > Top-level wildcard bindings (`http://*:80/` and `http://+:80`) should **not** be used. Top-level wildcard bindings can open up your app to security vulnerabilities. This applies to both strong and weak wildcards. Use explicit host names rather than wildcards. Subdomain wildcard binding (for example, `*.mysub.com`) doesn't have this security risk if you control the entire parent domain (as opposed to `*.com`, which is vulnerable). See [RFC 9110: HTTP Semantics (Section 7.2: Host and :authority)](https://www.rfc-editor.org/rfc/rfc9110#field.host) for more information.
+
+1. Under the server's node, select **Application Pools**.
+
+1. Right-click the site's app pool, and select **Basic Settings** from the contextual menu.
+
+1. In the **Edit Application Pool** window, set the **.NET CLR version** to **No Managed Code**:
+
+   ![Set No Managed Code for the .NET CLR version.](index/_static/edit-apppool-ws2016.png)
+
+    ASP.NET Core runs in a separate process and manages the runtime. ASP.NET Core doesn't rely on loading the desktop CLR (.NET CLR). The Core Common Language Runtime (CoreCLR) for .NET is booted to host the app in the worker process. Setting the **.NET CLR version** to **No Managed Code** is optional but recommended.
+
+   * For a 32-bit (x86) [self-contained deployment](/dotnet/core/deploying/#self-contained-deployments-scd) published with a 32-bit SDK that uses the in-process hosting model, enable the Application Pool for 32-bit. In IIS Manager, navigate to **Application Pools** in the **Connections** sidebar. Select the app's Application Pool. In the **Actions** sidebar, select **Advanced Settings**. Set **Enable 32-Bit Applications** to `True`.
+
+   * For a 64-bit (x64) [self-contained deployment](/dotnet/core/deploying/#self-contained-deployments-scd) that uses the in-process hosting model, disable the app pool for 32-bit (x86) processes. In IIS Manager, navigate to **Application Pools** in the **Connections** sidebar. Select the app's Application Pool. In the **Actions** sidebar, select **Advanced Settings**. Set **Enable 32-Bit Applications** to `False`.
+
+1. Confirm the process model identity has the proper permissions.
+
+   If the default identity of the app pool (**Process Model** > **Identity**) is changed from **ApplicationPoolIdentity** to another identity, verify that the new identity has the required permissions to access the app's folder, database, and other required resources. For example, the app pool requires read and write access to folders where the app reads and writes files.
+
+**Windows Authentication configuration (Optional)**  
+For more information, see [Configure Windows authentication](xref:security/authentication/windowsauth).
+
+ :::moniker range=">= aspnetcore-7.0"
+
+## Shadow copy
+
+Shadow copying app assemblies to the [ASP.NET Core Module (ANCM)](xref:host-and-deploy/aspnet-core-module) for IIS can provide a better end user experience than stopping the app by deploying an [app offline file](xref:host-and-deploy/iis/app-offline).
+
+When an ASP.NET Core app is running on Windows, the binaries are locked so that they can't be modified or replaced. Shadow copying enables the app assemblies to be updated while the app is running by making a copy of the assemblies.
+
+Shadow copy isn't intended to enable zero-downtime deployment, so it's expected that IIS will still recycle the app, and some requests might get a [503 Service Unavailable](https://developer.mozilla.org/docs/Web/HTTP/Reference/Status/503) response. We recommend using a pattern like [blue-green deployments](https://www.martinfowler.com/bliki/BlueGreenDeployment.html) or [Azure deployment slots](/azure/app-service/deploy-best-practices#use-deployment-slots) for zero-downtime deployments. Shadow copy helps minimize downtime on deployments, but it can't completely eliminate it.
+
+Customizing the ANCM handler settings in `web.config` enables shadow copying:
+
+```
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <system.webServer>
+    <handlers>
+      <remove name="aspNetCore"/>
+      <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified"/>
+    </handlers>
+    <aspNetCore processPath="%LAUNCHER_PATH%" arguments="%LAUNCHER_ARGS%" stdoutLogEnabled="false" stdoutLogFile=".logsstdout">
+      <handlerSettings>
+        <handlerSetting name="enableShadowCopy" value="true" />
+        <!-- Ensure that the IIS ApplicationPool identity has permission to this directory -->
+        <handlerSetting name="shadowCopyDirectory" value="../ShadowCopyDirectory/" />
+      </handlerSettings>
+    </aspNetCore>
+  </system.webServer>
+</configuration>
+```
+
+:::moniker-end

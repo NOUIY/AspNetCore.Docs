@@ -1,13 +1,15 @@
 ---
 title: Anchor Tag Helper in ASP.NET Core
+ai-usage: ai-assisted
 author: pkellner
 description: Discover the ASP.NET Core Anchor Tag Helper attributes and the role each attribute plays in extending behavior of the HTML anchor tag.
-ms.author: scaddie
+monikerRange: '>= aspnetcore-6.0'
+ms.author: wpickett
 ms.custom: mvc
-ms.date: 10/13/2019
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.date: 05/08/2026
 uid: mvc/views/tag-helpers/builtin-th/anchor-tag-helper
 ---
+
 # Anchor Tag Helper in ASP.NET Core
 
 By [Peter Kellner](https://peterkellner.net) and [Scott Addie](https://github.com/scottaddie)
@@ -16,7 +18,7 @@ The [Anchor Tag Helper](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper
 
 For an overview of Tag Helpers, see <xref:mvc/views/tag-helpers/intro>.
 
-[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/mvc/views/tag-helpers/built-in/samples) ([how to download](xref:index#how-to-download-a-sample))
+[View or download sample code](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/mvc/views/tag-helpers/built-in/samples) ([how to download](xref:fundamentals/index#how-to-download-a-sample))
 
 *SpeakerController* is used in samples throughout this document:
 
@@ -26,7 +28,7 @@ For an overview of Tag Helpers, see <xref:mvc/views/tag-helpers/intro>.
 
 ### asp-controller
 
-The [asp-controller](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Controller*) attribute assigns the controller used for generating the URL. The following markup lists all speakers:
+The [asp-controller](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Controller%2A) attribute assigns the controller used for generating the URL. The following markup lists all speakers:
 
 [!code-cshtml[](samples/TagHelpersBuiltIn/Views/Home/Index.cshtml?name=snippet_AspController)]
 
@@ -44,7 +46,7 @@ If the `asp-controller` attribute is specified and `asp-action` isn't, the defau
 
 ### asp-action
 
-The [asp-action](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Action*) attribute value represents the controller action name included in the generated `href` attribute. The following markup sets the generated `href` attribute value to the speaker evaluations page:
+The [asp-action](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Action%2A) attribute value represents the controller action name included in the generated `href` attribute. The following markup sets the generated `href` attribute value to the speaker evaluations page:
 
 [!code-cshtml[](samples/TagHelpersBuiltIn/Views/Home/Index.cshtml?name=snippet_AspAction)]
 
@@ -60,15 +62,20 @@ If the `asp-action` attribute value is `Index`, then no action is appended to th
 
 ### asp-route-{value}
 
-The [asp-route-{value}](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.RouteValues*) attribute enables a wildcard route prefix. Any value occupying the `{value}` placeholder is interpreted as a potential route parameter. If a default route isn't found, this route prefix is appended to the generated `href` attribute as a request parameter and value. Otherwise, it's substituted in the route template.
+The [asp-route-{value}](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.RouteValues%2A) attribute enables a wildcard route prefix. Any value occupying the `{value}` placeholder is interpreted as a potential route parameter. If a default route isn't found, this route prefix is appended to the generated `href` attribute as a request parameter and value. Otherwise, it's substituted in the route template.
 
 Consider the following controller action:
 
 [!code-csharp[](samples/TagHelpersBuiltIn/Controllers/SpeakerController.cs?name=snippet_SpeakerDetailAction)]
 
-With a default route template defined in *Startup.Configure*:
 
-[!code-csharp[](samples/TagHelpersBuiltIn/Startup.cs?name=snippet_UseMvc&highlight=8-10)]
+With a default route template defined in `Program.cs`:
+
+```csharp
+app.MapControllerRoute(
+  name: "default",
+  pattern: "{controller=Home}/{action=Index}/{id?}");
+```
 
 The MVC view uses the model, provided by the action, as follows:
 
@@ -114,9 +121,9 @@ If either `asp-controller` or `asp-action` aren't specified, then the same defau
 
 ### asp-route
 
-The [asp-route](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Route*) attribute is used for creating a URL linking directly to a named route. Using [routing attributes](xref:mvc/controllers/routing#ar), a route can be named as shown in the `SpeakerController` and used in its `Evaluations` action:
+The [asp-route](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Route%2A) attribute is used for creating a URL linking directly to a named route. Using [routing attributes](xref:mvc/controllers/routing#ar), a route can be named as shown in the `SpeakerController` and used in its `Evaluations` action:
 
-[!code-csharp[](samples/TagHelpersBuiltIn/Controllers/SpeakerController.cs?range=22-24)]
+[!code-csharp[](samples/TagHelpersBuiltIn/Controllers/SpeakerController.cs?range=24-25)]
 
 In the following markup, the `asp-route` attribute references the named route:
 
@@ -132,7 +139,7 @@ If `asp-controller` or `asp-action` is specified in addition to `asp-route`, the
 
 ### asp-all-route-data
 
-The [asp-all-route-data](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.RouteValues*) attribute supports the creation of a dictionary of key-value pairs. The key is the parameter name, and the value is the parameter value.
+The [asp-all-route-data](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.RouteValues%2A) attribute supports the creation of a dictionary of key-value pairs. The key is the parameter name, and the value is the parameter value.
 
 In the following example, a dictionary is initialized and passed to a Razor view. Alternatively, the data could be passed in with your model.
 
@@ -152,7 +159,7 @@ If any keys in the dictionary match route parameters, those values are substitut
 
 ### asp-fragment
 
-The [asp-fragment](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Fragment*) attribute defines a URL fragment to append to the URL. The Anchor Tag Helper adds the hash character (#). Consider the following markup:
+The [asp-fragment](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Fragment%2A) attribute defines a URL fragment to append to the URL. The Anchor Tag Helper adds the hash character (#). Consider the following markup:
 
 [!code-cshtml[](samples/TagHelpersBuiltIn/Views/Home/Index.cshtml?name=snippet_AspFragment)]
 
@@ -166,7 +173,7 @@ Hash tags are useful when building client-side apps. They can be used for easy m
 
 ### asp-area
 
-The [asp-area](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Area*) attribute sets the area name used to set the appropriate route. The following examples depict how the `asp-area` attribute causes a remapping of routes.
+The [asp-area](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Area%2A) attribute sets the area name used to set the appropriate route. The following examples depict how the `asp-area` attribute causes a remapping of routes.
 
 #### Usage in Razor Pages
 
@@ -180,8 +187,8 @@ Consider the following directory hierarchy:
     * **Sessions**
       * **Pages**
         * *\_ViewStart.cshtml*
-        * *Index.cshtml*
-        * *Index.cshtml.cs*
+        * `Index.cshtml`
+        * `Index.cshtml.cs`
   * **Pages**
 
 The markup to reference the *Sessions* area *Index* Razor Page is:
@@ -194,13 +201,9 @@ The generated HTML:
 <a href="/Sessions">View Sessions</a>
 ```
 
+
 > [!TIP]
-> To support areas in a Razor Pages app, do one of the following in `Startup.ConfigureServices`:
->
-> * Set the [compatibility version](xref:mvc/compatibility-version) to 2.1 or later.
-> * Set the [RazorPagesOptions.AllowAreas](xref:Microsoft.AspNetCore.Mvc.RazorPages.RazorPagesOptions.AllowAreas*) property to `true`:
->
->   [!code-csharp[](samples/TagHelpersBuiltIn/Startup.cs?name=snippet_AllowAreas)]
+> To support areas in a Razor Pages app, ensure that area routing is enabled in your app's routing configuration. Use the minimal hosting model and configure area routes in *Program.cs* as needed.
 
 #### Usage in MVC
 
@@ -211,11 +214,11 @@ Consider the following directory hierarchy:
   * **Areas**
     * **Blogs**
       * **Controllers**
-        * *HomeController.cs*
+        * `HomeController.cs`
       * **Views**
         * **Home**
-          * *AboutBlog.cshtml*
-          * *Index.cshtml*
+          * `AboutBlog.cshtml`
+          * `Index.cshtml`
         * *\_ViewStart.cshtml*
   * **Controllers**
 
@@ -229,14 +232,19 @@ The generated HTML:
 <a href="/Blogs/Home/AboutBlog">About Blog</a>
 ```
 
+
 > [!TIP]
-> To support areas in an MVC app, the route template must include a reference to the area, if it exists. That template is represented by the second parameter of the `routes.MapRoute` method call in *Startup.Configure*:
+> To support areas in an MVC app, the route template must include a reference to the area, if it exists. Configure area routes in *Program.cs* using `MapControllerRoute` with an area pattern, for example:
 >
-> [!code-csharp[](samples/TagHelpersBuiltIn/Startup.cs?name=snippet_UseMvc&highlight=5)]
+> ```csharp
+> app.MapControllerRoute(
+>     name: "mvcAreaRoute",
+>     pattern: "{area:exists}/{controller=Home}/{action=Index}");
+> ```
 
 ### asp-protocol
 
-The [asp-protocol](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Protocol*) attribute is for specifying a protocol (such as `https`) in your URL. For example:
+The [asp-protocol](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Protocol%2A) attribute is for specifying a protocol (such as `https`) in your URL. For example:
 
 [!code-cshtml[](samples/TagHelpersBuiltIn/Views/Home/Index.cshtml?name=snippet_AspProtocol)]
 
@@ -250,7 +258,7 @@ The host name in the example is localhost. The Anchor Tag Helper uses the websit
 
 ### asp-host
 
-The [asp-host](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Host*) attribute is for specifying a host name in your URL. For example:
+The [asp-host](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Host%2A) attribute is for specifying a host name in your URL. For example:
 
 [!code-cshtml[](samples/TagHelpersBuiltIn/Views/Home/Index.cshtml?name=snippet_AspHost)]
 
@@ -262,9 +270,9 @@ The generated HTML:
 
 ### asp-page
 
-The [asp-page](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Page*) attribute is used with Razor Pages. Use it to set an anchor tag's `href` attribute value to a specific page. Prefixing the page name with a forward slash ("/") creates the URL.
+The [asp-page](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.Page*) attribute is used with Razor Pages. Use it to set an anchor tag's `href` attribute value to a specific page. Prefixing the page name with `/` creates a URL for a matching page from the root of the app:
 
-The following sample points to the attendee Razor Page:
+With the sample code, the following markup creates a link to the attendee Razor Page:
 
 [!code-cshtml[](samples/TagHelpersBuiltIn/Views/Home/Index.cshtml?name=snippet_AspPage)]
 
@@ -284,11 +292,11 @@ The generated HTML:
 <a href="/Attendee?attendeeid=10">View Attendee</a>
 ```
 
-If the referenced page doesn't exist, a link to the main page is generated. No warning is indicated.
+If the referenced page doesn't exist, a link to the current page is generated using an [ambient value](xref:fundamentals/routing#ambient-values-and-explicit-values) from the request. No warning is indicated, except at the debug log level.
 
 ### asp-page-handler
 
-The [asp-page-handler](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.PageHandler*) attribute is used with Razor Pages. It's intended for linking to specific page handlers.
+The [asp-page-handler](xref:Microsoft.AspNetCore.Mvc.TagHelpers.AnchorTagHelper.PageHandler%2A) attribute is used with Razor Pages. It's intended for linking to specific page handlers.
 
 Consider the following page handler:
 
