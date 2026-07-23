@@ -1,337 +1,420 @@
 ---
-title: "Tutorial: Create a minimal web API with ASP.NET Core"
-author: rick-anderson
-description: Learn how to build a minimal web API with ASP.NET Core.
-ms.author: riande
-ms.date: 11/12/2021
+title: "Tutorial: Create a Minimal API with ASP.NET Core"
+author: wadepickett
+description: Create a Minimal API with ASP.NET Core using Visual Studio or Visual Studio Code. This tutorial covers GET, POST, PUT, PATCH, and DELETE endpoints for a to-do app.
+ai-usage: ai-assisted
+ms.author: wpickett
+ms.reviewer: wpickett
+ms.date: 06/28/2026
 monikerRange: '>= aspnetcore-6.0'
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR, Models]
 uid: tutorials/min-web-api
 ---
 
-# Tutorial: Create a minimal web API with ASP.NET Core
+# Tutorial: Create a Minimal API with ASP.NET Core
 
-<!-- TODO: Remove aspnetcore\tutorials\min-web-api\samples\6.x -->
-By [Rick Anderson](https://twitter.com/RickAndMSFT)
+[!INCLUDE[](~/includes/not-latest-version.md)]
 
-Minimal APIs are architected to create HTTP APIs with minimal dependencies. They are ideal for microservices and apps that want to include only the minimum files, features, and dependencies in ASP.NET Core.
+By [Wade Pickett](https://github.com/wadepickett) and [Tom Dykstra](https://github.com/tdykstra)
 
-This tutorial teaches the basics of building a minimal web API with ASP.NET Core. For a tutorial on creating a web API project based on [controllers](xref:web-api/index) that contains more features, see [Create a web API](xref:tutorials/first-web-api).
+:::moniker range=">= aspnetcore-10.0"
+
+Minimal APIs are designed to create HTTP APIs with minimal dependencies. They're ideal for microservices and apps that want to include only the minimum files, features, and dependencies in ASP.NET Core.
+
+This tutorial teaches the basics of building a Minimal API with ASP.NET Core. Another approach to creating APIs in ASP.NET Core is to use controllers. For help with choosing between Minimal APIs and controller-based APIs, see <xref:fundamentals/apis>. For a tutorial on creating an API project based on [controllers](xref:web-api/index) that contains more features, see [Create a web API](xref:tutorials/first-web-api).
 
 ## Overview
 
 This tutorial creates the following API:
 
-|API | Description | Request body | Response body |
-|--- | ---- | ---- | ---- |
-|`GET /` | Browser test, "Hello World" | None | Hello World!|
-|`GET /todoitems` | Get all to-do items | None | Array of to-do items|
-|`GET /todoitems/complete` | Get completed to-do items | None | Array of to-do items|
-|`GET /todoitems/{id}` | Get an item by ID | None | To-do item|
-|`POST /todoitems` | Add a new item | To-do item | To-do item |
-|`PUT /todoitems/{id}` | Update an existing item &nbsp; | To-do item | None |
-|`DELETE /todoitems/{id}` &nbsp; &nbsp; | Delete an item &nbsp; &nbsp; | None | None|
+| API                                    | Description                    | Request body | Response body        |
+|----------------------------------------|--------------------------------|--------------|----------------------|
+| `GET /todoitems`                       | Get all to-do items            | None         | Array of to-do items |
+| `GET /todoitems/complete`              | Get completed to-do items      | None         | Array of to-do items |
+| `GET /todoitems/{id}`                  | Get an item by ID              | None         | To-do item           |
+| `POST /todoitems`                      | Add a new item                 | To-do item   | To-do item           |
+| `PUT /todoitems/{id}`                  | Update an existing item &nbsp; | To-do item   | None                 |
+| `PATCH /todoitems/{id}`                | Partially update an item &nbsp;| Partial to-do item | None           |
+| `DELETE /todoitems/{id}` &nbsp; &nbsp; | Delete an item &nbsp; &nbsp;   | None         | None                 |
 
 ## Prerequisites
 
 # [Visual Studio](#tab/visual-studio)
 
-[!INCLUDE[](~/includes/net-prereqs-vs-6.0.md)]
-
-![VS22 installer workloads](min-web-api/_static/asp-net-web-dev.png)
+[!INCLUDE[](~/includes/net-prereqs-vs-10.md)]
 
 # [Visual Studio Code](#tab/visual-studio-code)
 
-[!INCLUDE[](~/includes/net-prereqs-vsc-6.0.md)]
+[!INCLUDE[](~/includes/net-prereqs-vsc-10.0.md)]
 
-<!-- add VS Mac later
-# [Visual Studio for Mac](#tab/visual-studio-mac)
-
-[!INCLUDE[](~/includes/net-prereqs-mac-6.0.md)]
--->
 ---
 
-## Create a Web API project
+## Create an API project
 
 # [Visual Studio](#tab/visual-studio)
 
-* Start Visual Studio 2022 and select **Create a new project**.
+* Start Visual Studio 2026 and select **Create a new project**.
 * In the **Create a new project** dialog:
-  * Enter `API` in the **Search for templates** search box.
-  * Select the **ASP.NET Core Web API** template and select **Next**.
-  ![Visual Studio Create a new project](min-web-api/_static/empty.png)
-* Name the project *TodoApi* and select **Next**.
+  * Select the **ASP.NET Core Web API** project type, and select **Next**.
+  * Name the project *TodoApi*, and select **Next**.
 * In the **Additional information** dialog:
+   * Confirm the **Framework** is **.NET 10.0 (Long Term Support)**.
+   * Confirm the checkbox for **Enable OpenAPI support** is checked.
+   * Confirm the checkbox for **Use controllers** is **not** checked. Uncheck this setting to create a Minimal API project as required for this tutorial rather than a controller-based one.
+   * Select **Create**.
 
-  * Select **.NET 6.0 (Long-term support)**
-  * Remove **Use controllers (uncheck to use minimal APIs)**
-  * Select **Create**
+  ![Additional information](~/tutorials/min-web-api/static/10/add-information-dialog-18-7-1.png)
 
- ![Additional information](min-web-api/_static/add-info2.png)
-
-<!-- 
-![VS new project dialog](min-web-api/_static/5/vs.png)
--->
-
-<!-- Move this later since we don't need it now -->
 # [Visual Studio Code](#tab/visual-studio-code)
 
-* Open the [integrated terminal](https://code.visualstudio.com/docs/editor/integrated-terminal).
-* Change directories (`cd`) to the folder that will contain the project folder.
+* Start Visual Studio Code, select **View**, and then select **Terminal** to open the [integrated terminal](https://code.visualstudio.com/docs/editor/integrated-terminal).
+* Change directory(`cd`) to the folder that contains the project folder.
 * Run the following commands:
 
-   ```dotnetcli
-   dotnet new webapi -minimal -o TodoApi
-   cd TodoApi
-   code -r ../TodoApi
-   ```
+```dotnetcli
+  dotnet new webapi -o TodoApi
+  cd TodoApi
+  code -r ../TodoApi
+```
 
 * When a dialog box asks if you want to trust the authors, select **Yes**.
 * When a dialog box asks if you want to add required assets to the project, select **Yes**.
 
-  The preceding command creates a new web minimal API project and opens it in Visual Studio Code.
+  The preceding commands create a new web Minimal API project and open it in Visual Studio Code.
 
-<!-- add VS Mac later 
-# [Visual Studio for Mac](#tab/visual-studio-mac)
-
-* Select **File** > **New Solution**.
-
-`  ![macOS New solution](first-web-api-mac/_static/sln.png)`
-
-* In Visual Studio for Mac earlier than version 8.6, select **.NET Core** > **App** > **API** > **Next**. In version 8.6 or later, select **Web and Console** > **App** > **API** > **Next**.
-
-`  ![macOS API template selection](first-web-api-mac/_static/api_template.png)`
-
-* In the **Configure the new ASP.NET Core Web API** dialog, select the latest .NET Core 5.x **Target Framework**. Select **Next**.
-
-* Enter *TodoApi* for the **Project Name** and then select **Create**.
-
- ` ![config dialog](first-web-api-mac/_static/2.png)`
-
-[!INCLUDE[](~/includes/mac-terminal-access.md)]
--->
 ---
 
 ### Examine the code
 
-The *Program.cs* file contains the following code:
-
-[!code-csharp[](min-web-api/samples/6.x/todo/Program.cs?name=snippet_default)]
-
-The project template creates a `WeatherForecast` API with support for [Swagger](xref:tutorials/web-api-help-pages-using-swagger). Swagger is used to generate useful documentation and help pages for web APIs.
-
-The following highlighted code adds support for Swagger:
-
-[!code-csharp[](min-web-api/samples/6.x/todo/Program.cs?name=snippet_swagger&highlight=5-6,13-14)]
-
-### Run the app
+The `Program.cs` file generated by the template contains the following code:
 
 # [Visual Studio](#tab/visual-studio)
 
-<!-- replace all of this with an include -->
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/Program.cs" id="snippet_templatestart":::
 
-Press Ctrl+F5 to run without the debugger.
+# [Visual Studio Code](#tab/visual-studio-code)
 
-[!INCLUDE[](~/includes/trustCertVS22.md)]
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VSC_Scalar/Program.cs" id="snippet_templatestart":::
 
-Visual Studio launches the [Kestrel web server](xref:fundamentals/servers/kestrel).
+---
+
+The preceding code:
+
+* Creates a <xref:Microsoft.AspNetCore.Builder.WebApplicationBuilder> and a <xref:Microsoft.AspNetCore.Builder.WebApplication> with preconfigured defaults.
+* Registers the in-box OpenAPI document generator by using `builder.Services.AddOpenApi()`.
+* Maps the generated OpenAPI document at `/openapi/v1.json` by using `app.MapOpenApi()`, in the Development environment only.
+* Defines a sample `GET /weatherforecast` endpoint that returns five randomly generated `WeatherForecast` records.
+
+In this tutorial, you replace the `WeatherForecast` with a new Todo sample, with endpoints to create, read, update, and delete items, backed by a model and a database.
+
+## Add NuGet packages
+
+Add NuGet packages to support the database used in this tutorial.
+
+# [Visual Studio](#tab/visual-studio)
+
+* From the **Tools** menu, select **NuGet Package Manager > Manage NuGet Packages for Solution**.
+* Select the **Browse** tab.
+* Enter **Microsoft.EntityFrameworkCore.InMemory** in the search box, and then select `Microsoft.EntityFrameworkCore.InMemory`.
+* Select the **Project** checkbox in the right pane and then select **Install**.
+
+# [Visual Studio Code](#tab/visual-studio-code)
+
+* Run the following command:
+
+```dotnetcli
+  dotnet add package Microsoft.EntityFrameworkCore.InMemory
+```
+
+---
+
+<a name="model-db-classes"></a> 
+
+## The model and database context classes
+
+* In the project folder, create a file named `Todo.cs` with the following code:
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/Todo.cs":::
+
+The preceding code creates the model for this app. A *model* is a class that represents data that the app manages.
+
+The `Secret` property is included to demonstrate a common real-world need: data the app stores and uses internally, such as the ID of the user who owns the item, that you don't want clients to see or set. In the [Prevent over-posting](#prevent-over-posting) step later in this tutorial, you use a Data Transfer Object (DTO) to keep fields like `Secret` out of the API's input and responses.
+
+* Create a file named `TodoDb.cs` with the following code:
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/TodoDb.cs":::
+
+The preceding code defines the *database context*, which is the main class that coordinates [Entity Framework](/ef/core/) functionality for a data model. This class derives from the <xref:Microsoft.EntityFrameworkCore.DbContext?displayProperty=fullName> class.
+
+The app uses an in-memory database named `TodoList`. The database is registered later in `Program.cs` with `builder.Services.AddDbContext<TodoDb>(opt => opt.UseInMemoryDatabase("TodoList"));`, where the string `"TodoList"` is the database name. Because the data is stored in memory, it's reset every time the app restarts.
+
+## Replace the `WeatherForecast` sample with the Todo API
+
+The `webapi` template adds a sample `GET /weatherforecast` endpoint to `Program.cs` and a `WeatherForecast` record at the bottom of the file. The sample is just a placeholder to show the template works - replace both with the Todo endpoints described in the following section.
+
+* Replace all of the code in `Program.cs` with the following. The `WeatherForecast` sample endpoint and record are removed, and the Todo endpoints take their place:
+
+# [Visual Studio](#tab/visual-studio)
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/Program.cs" id="snippet_minimal_start_all":::
+
+# [Visual Studio Code](#tab/visual-studio-code)
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VSC_Scalar/Program.cs" id="snippet_minimal_start_all":::
+
+The pasted code also includes `using Scalar.AspNetCore;` and `app.MapScalarApiReference();`, which add a browser UI for testing the API. You configure the Scalar package for these lines later in this tutorial, in [Add a browser UI to view the OpenAPI document](#add-a-browser-ui-to-view-the-openapi-document). The project won't build until then.
+
+---
+
+The OpenAPI lines that the template adds (`builder.Services.AddOpenApi()` and `app.MapOpenApi()`) stay in place. They now describe the Todo endpoints instead of the sample weather endpoint.
+
+The following highlighted code registers the app's services in the [dependency injection (DI)](xref:fundamentals/dependency-injection) container: the database context (`AddDbContext`) and the OpenAPI document generator (`AddOpenApi`):
+
+# [Visual Studio](#tab/visual-studio)
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/Program.cs" id="snippet_DI" highlight="2-3":::
+
+# [Visual Studio Code](#tab/visual-studio-code)
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VSC_Scalar/Program.cs" id="snippet_DI" highlight="2-3":::
+
+---
+
+The DI container provides access to the database context and other services.
+
+# [Visual Studio](#tab/visual-studio)
+
+This tutorial uses [Endpoints Explorer and .http files](xref:test/http-files#use-endpoints-explorer) to test the API.
+
+# [Visual Studio Code](#tab/visual-studio-code)
+
+<a name="add-a-browser-ui-to-view-the-openapi-document"></a> 
+
+### Add a browser UI to view the OpenAPI document
+
+The template already generates the OpenAPI document at `/openapi/v1.json`. To explore and test the API from a browser, add a UI that consumes that document. This tutorial uses Scalar.
+
+Add the [Scalar.AspNetCore](https://www.nuget.org/packages/Scalar.AspNetCore/) package, which provides the middleware that serves the UI:
+
+* Run the following command:
+
+```dotnetcli
+  dotnet add package Scalar.AspNetCore
+```
+
+In this tutorial, Scalar is used only for its API reference middleware, which reads the OpenAPI document generated by the AddOpenApi and MapOpenApi calls.
+
+Confirm that `Program.cs` includes the highlighted `MapScalarApiReference` line inside the `if (app.Environment.IsDevelopment())` block, right after the `app.MapOpenApi();` line, and that `using Scalar.AspNetCore;` is at the top of the file. You added these lines when you pasted the Todo code earlier.
+
+  :::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VSC_Scalar/Program.cs" id="snippet_scalar" highlight="4":::
+
+  The preceding code enables the Scalar UI in Development only. It reads `/openapi/v1.json`, the document produced by `MapOpenApi()`, and serves the API reference at `/scalar/v1`. Be sure to add `using Scalar.AspNetCore;` to the top of the file.
+
+  > [!NOTE]
+  > Scalar is one of several options for an OpenAPI UI. Alternatives such as `NSwag.AspNetCore` or `Swashbuckle.AspNetCore.SwaggerUi` consume the same OpenAPI document and can be substituted for Scalar without changing the rest of the tutorial.
+
+---
+
+<a name="post"></a>
+## Test posting data
+
+The following code in `Program.cs` creates an HTTP POST endpoint `/todoitems` that adds data to the in-memory database:
+
+# [Visual Studio](#tab/visual-studio)
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/Program.cs" id="snippet_post":::
+
+# [Visual Studio Code](#tab/visual-studio-code)
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VSC_Scalar/Program.cs" id="snippet_post":::
+
+---
+
+
+# [Visual Studio](#tab/visual-studio)
+
+* Press <kbd>Ctrl</kbd>+<kbd>F5</kbd> to run the app without debugging. Visual Studio launches the [Kestrel web server](xref:fundamentals/servers/kestrel) and trusts the development certificate if needed.
+
+[!INCLUDE[](~/includes/trustCertVS26.md)]
+
+Use the POST endpoint to add data to the app.
+
+* Select **View** > **Other Windows** > **Endpoints Explorer**.
+* Right-click the **POST** endpoint and select **Generate request**.
+
+  ![Endpoints Explorer context menu highlighting Generate Request menu item.](~/tutorials/min-web-api/static/10/generate-request-vs17-8-0.png)
+
+  A new file is created in the project folder named `TodoApi.http`, with contents similar to the following example:
+
+```http
+  @TodoApi_HostAddress = https://localhost:7031
+
+  POST {{TodoApi_HostAddress}}/todoitems
+
+  ###
+```
+
+  * The first line creates a variable that is used for all of the endpoints.
+  * The next line defines a POST request.
+  * The triple hashtag (`###`) line is a request delimiter: what comes after it is for a different request.
+
+* The POST request needs headers and a body. To define those parts of the request, add the following lines immediately after the POST request line:
+
+```
+  Content-Type: application/json
+  
+  {
+    "name":"walk dog",
+    "isComplete":true
+  }
+```
+  
+  The preceding code adds a Content-Type header and a JSON request body. The TodoApi.http file should now look like the following example, but with your port number:
+  
+```http
+  @TodoApi_HostAddress = https://localhost:7057
+  
+  POST {{TodoApi_HostAddress}}/todoitems
+  Content-Type: application/json
+  
+  {
+    "name":"walk dog",
+    "isComplete":true
+  }
+  
+  ###
+```
+
+* Select the **Send request** link that is above the `POST` request line.
+
+  ![.http file window with run link highlighted.](~/tutorials/min-web-api/static/9.x/http-file-run-button-vs17.8.0.png)
+
+  The POST request is sent to the app and the response is displayed in the **Response** pane.
+
+  ![.http file window with response from the POST request.](~/tutorials/min-web-api/static/10/http-file-window-with-response-vs18-6-2.png)
 
 # [Visual Studio Code](#tab/visual-studio-code)
 
 [!INCLUDE[](~/includes/trustCertVSC.md)]
 
-Press Ctrl+F5 to run the app. A browser window is opened. Append `/swagger` to the URL in the browser, for example `https://localhost:7122/swagger`.
+* In Visual Studio Code, press <kbd>Ctrl</kbd>+<kbd>F5</kbd> (Windows) or <kbd>control</kbd>+<kbd>F5</kbd> (macOS) to run the app without debugging.
 
-<!-- add VS Mac later 
-# [Visual Studio for Mac](#tab/visual-studio-mac)
+* You're prompted to select a debugger. Select **C#**.
 
-Select **Run** > **Start Debugging** to launch the app. Visual Studio for Mac launches a browser and navigates to `https://localhost:<port>`, where `<port>` is a randomly chosen port number. 
--->
+* You're prompted to select a launch configuration. Select **C#:TodoApi  [Default Configuration] TodoApi**
 
----
+  ![Select a launch configuration prompt.](~/tutorials/min-web-api/static/10/vsc-select-luanch-2026.png)
 
-The Swagger page `/swagger/index.html` is displayed. Select **`GET > Try it out> Execute`**. The page displays:
+The `TodoApi` app starts and listens on a randomly assigned local port. In the **Terminal** panel, find the `Now listening on:` line to get the URL and port, for example:
 
-* The [Curl](https://curl.haxx.se/) command to test the WeatherForecast API.
-* The URL to test the WeatherForecast API.
-* The response code, body, and headers.
-* A drop down list box with media types and the example value and schema.
+```output
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5090
+```
 
-Copy and paste the **Request URL** in the browser: `https://localhost:<port>/WeatherForecast`. JSON similar to the following is returned:
+In this example, the `TodoApi` app is listening at `http://localhost:5090`, so the port is `5090`. Your port number is likely different.
+
+* To open the app in your default browser, hold <kbd>Ctrl</kbd> (Windows) or <kbd>Cmd</kbd> (macOS) and select the URL on the `Now listening on:` line in the **Terminal** panel. The browser opens at the app's root, `http://localhost:{port}`.
+
+* In the browser address bar, append `/scalar/v1` to the URL to display the API reference page generated by Scalar, for example `http://localhost:5090/scalar/v1`.
+
+* On the Scalar page, select the **POST /todoitems** operation, and then select **Test Request**.
+
+* In the request body, enter JSON for a to-do item without specifying the optional `id`:
 
 ```json
-[
   {
-    "date": "2021-10-19T14:12:50.3079024-10:00",
-    "temperatureC": 13,
-    "summary": "Bracing",
-    "temperatureF": 55
-  },
-  {
-    "date": "2021-10-20T14:12:50.3080559-10:00",
-    "temperatureC": -8,
-    "summary": "Bracing",
-    "temperatureF": 18
-  },
-  {
-    "date": "2021-10-21T14:12:50.3080601-10:00",
-    "temperatureC": 12,
-    "summary": "Hot",
-    "temperatureF": 53
-  },
-  {
-    "date": "2021-10-22T14:12:50.3080603-10:00",
-    "temperatureC": 10,
-    "summary": "Sweltering",
-    "temperatureF": 49
-  },
-  {
-    "date": "2021-10-23T14:12:50.3080604-10:00",
-    "temperatureC": 36,
-    "summary": "Warm",
-    "temperatureF": 96
+    "name":"walk dog",
+    "isComplete":true
   }
-]
 ```
 
-## Update the generated code
+* Select **Send**.
 
-This tutorial focuses on creating a web API, so we'll delete the Swagger code and the `WeatherForecast` code. Replace the contents of the *Program.cs* file with the following:
+The Scalar UI displays the response, including the status code and response body. The response body shows:
 
-[!code-csharp[](min-web-api/samples/6.x/todo/Program.cs?name=snippet_min)]
+* The `id` is set to `1`.
+* A 201 `HTTP` status code is returned, which indicates that the request was successfully processed and resulted in the creation of a new resource.
 
-The following highlighted code creates a <xref:Microsoft.AspNetCore.Builder.WebApplicationBuilder> and a <xref:Microsoft.AspNetCore.Builder.WebApplication> with preconfigured defaults:
-
-[!code-csharp[](min-web-api/samples/6.x/todo/Program.cs?name=snippet_min&highlight=1-2)]
-
-The following code creates an HTTP GET endpoint `/` which returns `Hello World!`:
-
-```csharp
-app.MapGet("/", () => "Hello World!");
-```
-
-`app.Run();` runs the app.
-
-Remove the two `"launchUrl": "swagger",` lines from the *Properties/launchSettings.json* file. When the `launchUrl` isn't specified, the web browser requests the `/` endpoint.
-
-Run the app. `Hello World!` is displayed. The updated *Program.cs* file contains a minimal but complete app.
-
-## Add NuGet packages
-
-NuGet packages must be added to support the database and diagnostics used in this tutorial.
-
-# [Visual Studio](#tab/visual-studio)
-
-* From the **Tools** menu, select **NuGet Package Manager > Manage NuGet Packages for Solution**.
-* Select the **Browse** tab, and verify that **Include prerelease** is checked.
-* Enter **Microsoft.EntityFrameworkCore.InMemory** in the search box, and then select `Microsoft.EntityFrameworkCore.InMemory`.
-* Select the **Project** checkbox in the right pane and then select **Install**.
-* Follow the preceding instructions to add the `Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore` package.
-
-# [Visual Studio Code](#tab/visual-studio-code)
-
-* Run the following commands:
-
-   ```dotnetcli
-   dotnet add package Microsoft.EntityFrameworkCore.InMemory --prerelease
-   dotnet add package Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore --prerelease
-     ```
-
-<!-- add VS Mac later 
-# [Visual Studio for Mac](#tab/visual-studio-mac)
-
-Open a command terminal in the project folder and run the following command:
-
-   ```dotnetcli
-   dotnet add package Microsoft.EntityFrameworkCore.InMemory
-   ```
-   -->
 ---
-
-## Add the API code
-
-Replace the contents of the *Program.cs* file with the following code:
-
-[!code-csharp[](min-web-api/samples/6.x/todo/Program.cs?name=snippet_all)]
-
-## The model and database context classes
-
-The sample app contains the following model:
-
-[!code-csharp[](min-web-api/samples/6.x/todo/Program.cs?name=snippet_model)]
-
-A *model* is a class that represents data that the app manages. The model for this app is the `Todo` class.
-
-The sample app also contains the following database context class:
-
-[!code-csharp[](min-web-api/samples/6.x/todo/Program.cs?name=snippet_cntx)]
-
-The *database context* is the main class that coordinates [Entity Framework](/ef/core/) functionality for a data model. This class is created by deriving from the <xref:Microsoft.EntityFrameworkCore.DbContext?displayProperty=fullName> class.
-
-The following highlighted code adds the database context to the [dependency injection (DI)](xref:fundamentals/dependency-injection) container and enables displaying database-related exceptions:
-
-[!code-csharp[](min-web-api/samples/6.x/todo/Program.cs?name=snippet_DI&highlight=2-3)]
-
-The DI container provides access to the database context and other services.
-
-The following code creates an HTTP POST endpoint `/todoitems` to add data to the in-memory database:
-
-[!code-csharp[](min-web-api/samples/6.x/todo/Program.cs?name=snippet_post)]
-
-## Install Postman to test the app
-
-This tutorial uses Postman to test the API.
-
-* Install [Postman](https://www.getpostman.com/downloads/)
-* Start the web app.
-* Start Postman.
-* Disable **SSL certificate verification**
-  * From **File** > **Settings** (**General** tab), disable **SSL certificate verification**.
-    > [!WARNING]
-    > Re-enable SSL certificate verification after testing the controller.
-
-<a name="post"></a>
-
-### Test posting data
-
-The following instructions post data to the app:
-
-  * Create a new request.
-  * Set the HTTP method to `POST`.
-  * Set the URI to `https://localhost:<port>/todoitems`. For example: `https://localhost:5001/todoitems`
-  * Select the **Body** tab.
-  * Select **raw**.
-  * Set the type to **JSON**.
-  * In the request body enter JSON for a to-do item:
-  
-      ```json
-      {
-        "name":"walk dog",
-        "isComplete":true
-      }
-      ```
-  
-  * Select **Send**.
-    ![Postman with Post request details](min-web-api/_static/post2.png)
 
 ## Examine the GET endpoints
 
-The sample app implements several GET endpoints using calls to `MapGet`:
+Your `Program.cs` includes several GET endpoints, defined with `MapGet`:
 
 |API | Description | Request body | Response body |
 |--- | ---- | ---- | ---- |
-|`GET /` | Browser test, "Hello World" | None | `Hello World!`|
 |`GET /todoitems` | Get all to-do items | None | Array of to-do items|
+|`GET /todoitems/complete` | Get all completed to-do items | None | Array of to-do items|
 |`GET /todoitems/{id}` | Get an item by ID | None | To-do item|
 
-[!code-csharp[](min-web-api/samples/6.x/todo/Program.cs?name=snippet_get)]
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/Program.cs" id="snippet_get":::
 
 ## Test the GET endpoints
 
-Test the app by calling the two endpoints from a browser or Postman. For example:
+# [Visual Studio](#tab/visual-studio)
 
-* `GET https://localhost:5001/todoitems`
-* `GET https://localhost:5001/todoitems/1`
+Test the app by calling the `GET` endpoints from a browser or by using **Endpoints Explorer**. The following steps are for **Endpoints Explorer**.
+
+* In **Endpoints Explorer**, right-click the first **GET** endpoint, and select **Generate request**.
+
+  The following content is added to the `TodoApi.http` file:
+
+```http
+  GET {{TodoApi_HostAddress}}/todoitems
+
+  ###
+```
+
+* Select the **Send request** link that is above the new `GET` request line.
+
+  The GET request is sent to the app and the response is displayed in the **Response** pane.
+
+* The response body is similar to the following JSON:
+
+```json
+  [
+    {
+      "id": 1,
+      "name": "walk dog",
+      "isComplete": true,
+      "secret": null
+    }
+  ]
+```
+
+* In **Endpoints Explorer**, right-click the `/todoitems/{id}` **GET** endpoint and select **Generate request**.
+  The following content is added to the `TodoApi.http` file:
+
+```http
+  GET {{TodoApi_HostAddress}}/todoitems/{id}
+
+  ###
+```
+
+* Replace `{id}` with `1`.
+
+* Select the **Send request** link that is above the new GET request line.
+
+  The GET request is sent to the app and the response is displayed in the **Response** pane.
+
+* The response body is similar to the following JSON:
+
+```json
+  {
+    "id": 1,
+    "name": "walk dog",
+    "isComplete": true,
+    "secret": null
+  }
+```
+  
+# [Visual Studio Code](#tab/visual-studio-code)
+
+Test the app by calling the endpoints from a browser or the Scalar UI.
+
+* In the Scalar UI, select **GET /todoitems**, and then select **Test Request** > **Send**.
+
+* Alternatively, call **GET /todoitems** from a browser by entering the URI `http://localhost:{port}/todoitems`. For example, `http://localhost:7032/todoitems`.
 
 The call to `GET /todoitems` produces a response similar to the following:
 
@@ -339,20 +422,33 @@ The call to `GET /todoitems` produces a response similar to the following:
 [
   {
     "id": 1,
-    "name": "Item1",
-    "isComplete": false
+    "name": "walk dog",
+    "isComplete": true,
+    "secret": null
   }
 ]
 ```
 
-### Test the GET endpoints with Postman
+* Call **GET /todoitems/{id}** in Scalar to return data from a specific id:
+  * Select **GET /todoitems/{id}**, and then select **Test Request**.
+  * Set the **id** field to `1` and select **Send**.
 
-* Create a new request.
-* Set the HTTP method to **GET**.
-* Set the request URI to `https://localhost:<port>/todoitems`. For example, `https://localhost:5001/todoitems`.
-* Select **Send**.
+* Alternatively, call **GET /todoitems/{id}** from a browser by entering the URI `http://localhost:{port}/todoitems/1`. For example, `http://localhost:7032/todoitems/1`.
 
-This app uses an in-memory database. If the app is restarted, the GET request doesn't return any data. If no data is returned, first [POST](#post) data to the app.
+* The response is similar to the following:
+
+```json
+  {
+    "id": 1,
+    "name": "walk dog",
+    "isComplete": true,
+    "secret": null
+  }
+```
+
+---
+
+This app uses an in-memory database. If you restart the app, the data is lost: `GET /todoitems` returns an empty array (`[]`), and `GET /todoitems/{id}` returns a `404 Not Found`. To repopulate the app, [POST](#post) data to the app and try the GET request again.
 
 ## Return values
 
@@ -367,100 +463,371 @@ The return types can represent a wide range of HTTP status codes. For example, `
 
 The sample app implements a single PUT endpoint using `MapPut`:
 
-[!code-csharp[](min-web-api/samples/6.x/todo/Program.cs?name=snippet_put)]
+# [Visual Studio](#tab/visual-studio)
 
-This method is similar to the `MapPost` method, except it uses HTTP PUT. A successful response returns [204 (No Content)](https://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html). According to the HTTP specification, a PUT request requires the client to send the entire updated entity, not just the changes. To support partial updates, use [HTTP PATCH](xref:Microsoft.AspNetCore.Mvc.HttpPatchAttribute).
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/Program.cs" id="snippet_put":::
 
-### Test the PUT endpoint
+# [Visual Studio Code](#tab/visual-studio-code)
 
-This sample uses an in-memory database that must be initialized each time the app is started. There must be an item in the database before you make a PUT call. Call GET to ensure there's an item in the database before making a PUT call.
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VSC_Scalar/Program.cs" id="snippet_put":::
 
-Update the to-do item that has Id = 1 and set its name to `"feed fish"`:
+---
 
-```json
-{
-  "Id": 1,
-  "name": "feed fish",
-  "isComplete": false
-}
+This method is similar to the `MapPost` method, except it uses HTTP PUT. A successful response returns [204 (No Content)](https://www.rfc-editor.org/rfc/rfc9110#status.204). According to the HTTP specification, a PUT request requires the client to send the entire updated entity, not just the changes. To support partial updates, use [HTTP PATCH](xref:Microsoft.AspNetCore.Mvc.HttpPatchAttribute).
+
+## Test the PUT endpoint
+
+This sample uses an in-memory database that you must initialize each time you start the app. You need an item in the database before you make a PUT call. Call POST to ensure there's an item in the database before making a PUT call.
+
+Update the Todo item that has `Id = 1` and set its name to `"feed fish"`.
+
+# [Visual Studio](#tab/visual-studio)
+
+* In **Endpoints Explorer**, right-click the **PUT** endpoint, and select **Generate request**.
+
+  The following content is added to the `TodoApi.http` file:
+
+```http
+  PUT {{TodoApi_HostAddress}}/todoitems/{id}
+
+  ###
 ```
 
-<!--
-The following image shows the Postman update:
- 
-`![Postman console showing 204 (No Content) response](min-web-api/_static/3/pmcput.png)`
--->
+* In the PUT request line, replace `{id}` with `1`.
+
+* Add the following lines immediately after the PUT request line:
+
+```http
+  Content-Type: application/json
+
+  {
+    "id": 1,
+    "name": "feed fish",
+    "isComplete": false
+  }
+```
+
+  The preceding code adds a Content-Type header and a JSON request body.
+
+* Select the **Send request** link that is above the new PUT request line.
+  
+# [Visual Studio Code](#tab/visual-studio-code)
+
+Use the Scalar UI to send a PUT request:
+
+* Select **PUT /todoitems/{id}**, and then select **Test Request**.
+
+* Set the **id** field to `1`.
+
+* Set the request body to the following JSON:
+
+```json
+  {
+    "id": 1,
+    "name": "feed fish",
+    "isComplete": false
+  }
+```
+
+* Select **Send**.
+
+---
+
+The PUT request is sent to the app and the response is displayed in the **Response** pane. The response body is empty, and the status code is 204.
+
+## Create and examine the PATCH endpoint
+
+A PATCH endpoint lets clients send only the fields they want to update, such as renaming a Todo item without resending its completion status. This approach differs from a PUT request, which replaces the entire item, so the client must send every field even if only one is changed.
+
+The next steps add a new file and modify the `Program.cs` file. Stop the `TodoApi` app before making these changes. Leave the Scalar page in the browser running.
+
+# [Visual Studio](#tab/visual-studio)
+
+* To stop the app, select the **Stop** button (the red square) in the Visual Studio toolbar.
+
+# [Visual Studio Code](#tab/visual-studio-code)
+
+* To stop the app, press <kbd>Shift</kbd>+<kbd>F5</kbd>.
+
+---
+
+This sample uses an in-memory database that you must initialize each time the app starts. The database must contain an item before you make a PATCH call. Call POST to ensure the database has an item before making a PATCH call.
+
+The PATCH endpoint uses a `TodoPatchDto` class with nullable properties to properly handle partial updates. By using nullable properties, the endpoint can distinguish between a field that wasn't provided (null) and a field explicitly set to a value (including false for boolean fields). Without nullable properties, a non-nullable bool defaults to false, which could potentially overwrite an existing true value when that field isn't included in the request.
+
+* Create a file named `TodoPatchDto.cs` with the following code:
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/TodoPatchDto.cs":::
+
+The `TodoPatchDto` class uses nullable properties (`string?` and `bool?`) to distinguish between a field that wasn't provided in the request versus a field explicitly set to a value.
+
+* In `Program.cs`, add the following PATCH endpoint immediately after the `MapPut` endpoint:
+
+# [Visual Studio](#tab/visual-studio)
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/Program.cs" id="snippet_patch":::
+
+# [Visual Studio Code](#tab/visual-studio-code)
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VSC_Scalar/Program.cs" id="snippet_patch":::
+
+---
+
+This method is similar to the `MapPut` method, but it uses HTTP PATCH and only updates the fields provided in the request. A successful response returns [204 (No Content)](https://www.rfc-editor.org/rfc/rfc9110#status.204).
+
+> [!NOTE]
+> PATCH operations allow partial updates to resources. For more advanced partial updates using JSON Patch documents, see <xref:web-api/jsonpatch>.
+
+## Test the PATCH endpoint
+
+# [Visual Studio](#tab/visual-studio)
+
+* Press <kbd>Ctrl</kbd>+<kbd>F5</kbd> to rebuild and run the app with the new PATCH endpoint.
+
+# [Visual Studio Code](#tab/visual-studio-code)
+
+* Run the app again so it rebuilds with the new PATCH endpoint. In Visual Studio Code, press <kbd>Ctrl</kbd>+<kbd>F5</kbd> (Windows) or <kbd>control</kbd>+<kbd>F5</kbd> (macOS) to run the app without debugging.
+
+---
+
+
+This sample uses an in-memory database that you must initialize each time the app starts. The database must contain an item before you make a PATCH call. Call POST to ensure the database has an item before making a PATCH call.
+
+Update only the `name` property of the Todo item that has `Id = 1` and set its name to `"run errands"`.
+
+# [Visual Studio](#tab/visual-studio)
+
+* In **Endpoints Explorer**, select the refresh button. Then, right-click the **PATCH** endpoint, and select **Generate request**.
+
+  The following content is added to the `TodoApi.http` file:
+
+```http
+  PATCH {{TodoApi_HostAddress}}/todoitems/{id}
+
+  ###
+```
+
+* In the PATCH request line, replace `{id}` with `1`.
+
+* Add the following lines immediately after the PATCH request line:
+
+```http
+  Content-Type: application/json
+
+  {
+    "name": "run errands"
+  }
+```
+
+  The preceding code adds a Content-Type header and a JSON request body with only the field to update.
+
+* Select the **Send request** link that is above the new PATCH request line.
+  
+# [Visual Studio Code](#tab/visual-studio-code)
+
+Use the Scalar UI to send a PATCH request:
+
+* Refresh the scalar page in the browser so that the new `PATCH` endpoint appears.
+
+* Select **PATCH /todoitems/{id}**, and then select **Test Request**.
+
+* Set the **id** field to `1`.
+
+* Set the request body to the following JSON:
+
+```json
+  {
+    "name": "run errands"
+  }
+```
+
+* Select **Send**.
+
+---
+
+The PATCH request is sent to the app and the response is displayed in the **Response** pane. The response body is empty, and the status code is 204.
 
 ## Examine the DELETE endpoint
 
-The sample app implements a single DELETE endpoint using `MapDelete`:
+Your `Program.cs` file includes a single DELETE endpoint, defined with `MapDelete`:
 
-[!code-csharp[](min-web-api/samples/6.x/todo/Program.cs?name=snippet_delete)]
+# [Visual Studio](#tab/visual-studio)
 
-Use Postman to delete a to-do item:
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/Program.cs" id="snippet_delete":::
 
-* Set the method to `DELETE`.
-* Set the URI of the object to delete (for example `https://localhost:5001/todoitems/1`).
-* Select **Send**.
+# [Visual Studio Code](#tab/visual-studio-code)
 
-<a name="over-post-v6"></a>
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VSC_Scalar/Program.cs" id="snippet_delete":::
+
+---
+
+## Test the DELETE endpoint
+
+# [Visual Studio](#tab/visual-studio)
+
+* In **Endpoints Explorer**, right-click the **DELETE** endpoint and select **Generate request**.
+
+  A DELETE request is added to `TodoApi.http`.
+
+* Replace `{id}` in the DELETE request line with `1`. The DELETE request should look like the following example:
+
+```http
+  DELETE {{TodoApi_HostAddress}}/todoitems/1
+
+  ###
+```
+
+* Select the **Send request** link for the DELETE request.
+  
+# [Visual Studio Code](#tab/visual-studio-code)
+
+Use the Scalar UI to send a DELETE request:
+
+* Select **DELETE /todoitems/{id}**, then **Test Request**.
+* Set the **id** field to `1` and select **Send**.
+
+---
+
+The DELETE request is sent to the app and the response is displayed in the **Response** pane. The response body is empty, and the status code is 204.
+
+## Use the MapGroup API
+
+* The next steps modify the `Program.cs` file, so stop the app before making these changes. Leave the scalar page in the browser running.
+
+# [Visual Studio](#tab/visual-studio)
+
+* To stop the app, select the **Stop** button (the red square) in the Visual Studio toolbar.
+
+# [Visual Studio Code](#tab/visual-studio-code)
+
+* To stop the app, press <kbd>Shift</kbd>+<kbd>F5</kbd>.
+
+---
+
+The `Program.cs` file you wrote repeats the `todoitems` URL prefix each time it sets up an endpoint. APIs often have groups of endpoints with a common URL prefix, and the <xref:Microsoft.AspNetCore.Builder.EndpointRouteBuilderExtensions.MapGroup%2A> method helps organize such groups. It reduces repetitive code and allows you to customize entire groups of endpoints with a single call to methods like <xref:Microsoft.AspNetCore.Builder.AuthorizationEndpointConventionBuilderExtensions.RequireAuthorization%2A> and <xref:Microsoft.AspNetCore.Builder.RoutingEndpointConventionBuilderExtensions.WithMetadata%2A>.
+
+* Replace the contents of `Program.cs` with the following code:
+
+# [Visual Studio](#tab/visual-studio)
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/Program.cs" id="snippet_mapgroup_all":::
+
+# [Visual Studio Code](#tab/visual-studio-code)
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VSC_Scalar/Program.cs" id="snippet_mapgroup_all":::
+
+---
+
+The preceding code has the following changes:
+
+* Adds `var todoItems = app.MapGroup("/todoitems");` to set up the group using the URL prefix `/todoitems`.
+* Changes all the `app.Map<HttpVerb>` methods to `todoItems.Map<HttpVerb>`.
+* Removes the URL prefix `/todoitems` from the `Map<HttpVerb>` method calls.
+
+* Runs the app and tests the endpoints to verify that they work the same.
+
+## Use the TypedResults API
+
+The next steps modify the `Program.cs` file, so stop the app before making these changes. Leave the scalar page in the browser running.
+
+Returning <xref:Microsoft.AspNetCore.Http.TypedResults> rather than <xref:Microsoft.AspNetCore.Http.Results> has several advantages, including testability and automatically returning the response type metadata for OpenAPI to describe the endpoint. For more information, see [TypedResults vs Results](/aspnet/core/fundamentals/minimal-apis/responses#typedresults-vs-results).
+
+* The `Map<HttpVerb>` methods can call route handler methods instead of using lambdas. To see an example, update *Program.cs* with the following code:
+
+# [Visual Studio](#tab/visual-studio)
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/Program.cs" id="snippet_typed_all":::
+
+# [Visual Studio Code](#tab/visual-studio-code)
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VSC_Scalar/Program.cs" id="snippet_typed_all":::
+
+---
+
+The `Map<HttpVerb>` code now calls methods instead of lambdas:
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/Program.cs" id="snippet_typed_group":::
+
+The following methods return objects that implement <xref:Microsoft.AspNetCore.Http.IResult> and are defined by <xref:Microsoft.AspNetCore.Http.TypedResults>:
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/Program.cs" id="snippet_typed_handlers":::
+
+Unit tests can call these methods and test that they return the correct type. For example, if the method is `GetAllTodos`:
+
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/Program.cs" id="snippet_typed_getalltodos":::
+
+Unit test code can verify that an object of type [Ok\<Todo[]>](xref:Microsoft.AspNetCore.Http.HttpResults.Ok%601.Value) is returned from the handler method. For example:
+
+```csharp
+public async Task GetAllTodos_ReturnsOkOfTodosResult()
+{
+    // Arrange
+    var db = CreateDbContext();
+
+    // Act
+    var result = await TodosApi.GetAllTodos(db);
+
+    // Assert: Check for the correct returned type
+    Assert.IsType<Ok<Todo[]>>(result);
+}
+```
+
+<a name="prevent-over-posting"></a>
 
 ## Prevent over-posting
 
-Currently the sample app exposes the entire `Todo` object. Production apps typically limit the data that's input and returned using a subset of the model. There are multiple reasons behind this and security is a major one. The subset of a model is usually referred to as a Data Transfer Object (DTO), input model, or view model. **DTO** is used in this article.
+Currently, your API exposes the entire `Todo` object, including the `Secret` property you added in [The model and database context classes](#model-db-classes). In production applications, use a subset of the model to restrict the data that clients can input and receive. Security is a major reason for this restriction. This subset of a model is usually referred to as a Data Transfer Object (DTO), input model, or view model. This article uses **DTO**.
 
-A DTO may be used to:
+Use a DTO to:
 
 * Prevent over-posting.
-* Hide properties that clients are not supposed to view.
-* Omit some properties in order to reduce payload size.
+* Hide properties that clients aren't supposed to view.
+* Omit some properties to reduce payload size.
 * Flatten object graphs that contain nested objects. Flattened object graphs can be more convenient for clients.
 
-To demonstrate the DTO approach, update the `Todo` class to include a secret field:
+This app needs to hide the `Secret` field, but an administrative app could choose to expose it.
 
-[!code-csharp[](min-web-api/samples/6.x/todoDTO/Program.cs?name=snippet_secret&highlight=6)]
+* The next steps add a file, so stop the app before making these changes. Leave the scalar page in the browser running.
 
-The secret field needs to be hidden from this app, but an administrative app could choose to expose it.
+* Create a file named `TodoItemDTO.cs` with the following code:
 
-Verify you can post and get the secret field.
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/TodoItemDTO.cs":::
 
-Create a DTO model:
+* Replace the contents of the `Program.cs` file with the following code to use this DTO model:
 
-[!code-csharp[](min-web-api/samples/6.x/todoDTO/Program.cs?name=snippet_DTO)]
+# [Visual Studio](#tab/visual-studio)
 
-Update the code to use `TodoItemDTO`:
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VS_EndpointExplorer/Program.cs" id="snippet_dto_all":::
 
-[!code-csharp[](min-web-api/samples/6.x/todoDTO/Program.cs?name=snippet_all)]
+# [Visual Studio Code](#tab/visual-studio-code)
 
-Verify you can't post or get the secret field.
+:::code language="csharp" source="~/tutorials/min-web-api/samples/10.x/TodoApi_VSC_Scalar/Program.cs" id="snippet_dto_all":::
 
-## Differences between minimal APIs and APIs with controllers
+---
 
-- No support for filters: For example, no support for  <xref:Microsoft.AspNetCore.Mvc.Filters.IAsyncAuthorizationFilter>, <xref:Microsoft.AspNetCore.Mvc.Filters.IAsyncActionFilter>, <xref:Microsoft.AspNetCore.Mvc.Filters.IAsyncExceptionFilter>, <xref:Microsoft.AspNetCore.Mvc.Filters.IAsyncResultFilter>,  and <xref:Microsoft.AspNetCore.Mvc.Filters.IAsyncResourceFilter>.
-- No support for model binding, i.e. <xref:Microsoft.AspNetCore.Mvc.ModelBinding.IModelBinderProvider>, <xref:Microsoft.AspNetCore.Mvc.ModelBinding.IModelBinder>. Support can be added with a custom binding shim.
-  - No support for binding from forms. This includes binding <xref:Microsoft.AspNetCore.Http.IFormFile>. We plan to add support for `IFormFile` in the future.
-- No built-in support for validation, i.e. <xref:Microsoft.AspNetCore.Mvc.ModelBinding.Validation.IModelValidator>
-- No support for [application parts](xref:mvc/extensibility/app-parts) or the [application model](xref:mvc/controllers/application-model). There's no way to apply or build your own conventions.
-- No built-in view rendering support. We recommend using [Razor Pages](xref:tutorials/razor-pages/razor-pages-start) for rendering views.
-- No support for [JsonPatch](https://www.nuget.org/packages/Microsoft.AspNetCore.JsonPatch/)
-- No support for [OData](https://www.nuget.org/packages/Microsoft.AspNetCore.OData/)
-- No support for [ApiVersioning](https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.Versioning/). See [this issue](https://github.com/dotnet/aspnet-api-versioning/issues/751) for more details.
-## Use JsonOptions
+* Run the app and verify you can post and get all fields except the `Secret` field.
 
-The following code uses <xref:Microsoft.AspNetCore.Http.Json.JsonOptions>:
+<a name="troubleshoot-completed-sample"></a>
 
-[!code-csharp[](min-web-api/samples/6.x/WebMinJson/Program.cs?name=snippet_1)]
+## Troubleshooting with the completed sample
 
-The following code uses <xref:System.Text.Json.JsonSerializerOptions>:
+If you run into a problem you can't resolve, compare your code to the completed project. [View or download completed project](https://github.com/dotnet/AspNetCore.Docs/tree/main/aspnetcore/tutorials/min-web-api/samples) ([how to download](xref:fundamentals/index#how-to-download-a-sample)).
 
-[!code-csharp[](min-web-api/samples/6.x/WebMinJson/Program.cs?name=snippet_2)]
+## Next steps
 
-The preceding code uses [web defaults](/dotnet/standard/serialization/system-text-json-configure-options#web-defaults-for-jsonserializeroptions), which converts property names to camel case.
+* [Configure JSON serialization options](xref:fundamentals/minimal-apis/responses#configure-json-serialization-options).
+* Handle errors and exceptions: The [developer exception page](xref:fundamentals/error-handling-api#developer-exception-page) is enabled by default in the `Development` environment for Minimal API apps. For information about how to handle errors and exceptions, see [Handle errors in ASP.NET Core APIs](xref:fundamentals/error-handling-api).
+* For an example of testing a Minimal API app, see [this GitHub sample](https://github.com/dotnet/AspNetCore.Docs.Samples/tree/main/fundamentals/minimal-apis/samples/MinApiTestsSample).
+* [OpenAPI support in Minimal APIs](xref:fundamentals/openapi/aspnetcore-openapi).
+* [Quickstart: Publish to Azure](/azure/app-service/quickstart-dotnetcore).
+* [Organizing ASP.NET Core Minimal APIs](https://www.tessferrandez.com/blog/2023/10/31/organizing-minimal-apis.html).
 
-## Test minimal API
+### Learn more
 
-For an example of testing a minimal API app, see [this GitHub sample](https://github.com/davidfowl/CommunityStandUpMinimalAPI/blob/main/TodoApi.Tests/TodoTests.cs).
+See <xref:fundamentals/minimal-apis>
 
-## Additional resources
+:::moniker-end
 
-* <xref:fundamentals/minimal-apis>
+[!INCLUDE[](~/tutorials/min-web-api/includes/min-web-api-6-7.md)]
+[!INCLUDE[](~/tutorials/min-web-api/includes/min-web-api-8.md)]
+[!INCLUDE[](~/tutorials/min-web-api/includes/min-web-api-9.md)]
