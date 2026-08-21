@@ -1,14 +1,14 @@
-using System.Net;
+using static Microsoft.AspNetCore.Http.StatusCodes;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
 
-if (builder.Environment.IsDevelopment())
+if (!builder.Environment.IsDevelopment())
 {
     builder.Services.AddHttpsRedirection(options =>
     {
-        options.RedirectStatusCode = (int)HttpStatusCode.PermanentRedirect;
+        options.RedirectStatusCode = Status308PermanentRedirect;
         options.HttpsPort = 443;
     });
 }

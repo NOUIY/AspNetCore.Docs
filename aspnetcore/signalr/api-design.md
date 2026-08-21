@@ -1,17 +1,15 @@
 ---
 title: SignalR API design considerations
-author: bradygaster
+author: wadepickett
 description: Learn how to design SignalR APIs for compatibility across versions of your app.
 monikerRange: '>= aspnetcore-2.1'
-ms.author: bradyg
-ms.custom: mvc
-ms.date: 11/12/2019
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.author: wpickett
+ms.date: 07/06/2026
 uid: signalr/api-design
 ---
 # SignalR API design considerations
 
-By [Andrew Stanton-Nurse](https://twitter.com/anurse)
+By [Ashley Stanton-Nurse](https://github.com/analogrelay)
 
 This article provides guidance for building SignalR-based APIs.
 
@@ -76,3 +74,7 @@ The older clients won't be expecting the `Sender` value, so they'll ignore it. A
 [!code-typescript[OnWithObjectNew](api-design/sample/Samples.ts?name=OnWithObjectNew&highlight=2-5)]
 
 In this case, the new client is also tolerant of an old server that doesn't provide the `Sender` value. Since the old server won't provide the `Sender` value, the client checks to see if it exists before accessing it.
+
+## Additional resources
+
+* [SignalR assemblies in shared framework](xref:migration/22-to-30#signalr-assemblies-in-shared-framework)
