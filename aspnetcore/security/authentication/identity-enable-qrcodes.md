@@ -1,106 +1,93 @@
 ---
-title: Enable QR Code generation for TOTP authenticator apps in ASP.NET Core
-author: rick-anderson
-description: Discover how to enable QR code generation for TOTP authenticator apps that work with ASP.NET Core two-factor authentication.
-ms.author: riande
-ms.date: 08/14/2018
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+title: Enable QR code generation for TOTP authentication
+ai-usage: ai-assisted
+author: wadepickett
+description: Discover how to enable QR code generation for time-based one-time password (TOTP) authenticator apps that work with ASP.NET Core two-factor authentication.
+monikerRange: '>= aspnetcore-2.1'
+ms.author: wpickett
+ms.date: 05/15/2026
+ms.reviewer: wpickett
 uid: security/authentication/identity-enable-qrcodes
+
+# customer intent: As an ASP.NET developer, I want to enable QR code generation for TOTP authenticator apps, so I can support two-factor authentication.
 ---
 
-# Enable QR Code generation for TOTP authenticator apps in ASP.NET Core
+# Enable QR code generation for TOTP authenticator apps in ASP.NET Core
 
-::: moniker range="<= aspnetcore-2.0"
+ASP.NET Core includes support for authenticator applications for user authentication. Two-factor authentication (2FA) authenticator apps use a Time-based One-time Password Algorithm (TOTP), the industry-recommended approach for 2FA. (TOTP-based 2FA is preferred over SMS 2FA.) Users typically install the authenticator app on a smartphone. The app provides a 6 to 8 digit code that the user enters after they confirm their username and password. 
 
-QR Codes requires ASP.NET Core 2.0 or later.
+> [!WARNING]
+> Keep the ASP.NET Core TOTP code secret. The user can enter the code multiple times and authenticate successfully before it expires.
 
-::: moniker-end
+:::moniker range=">= aspnetcore-8.0"
 
-::: moniker range=">= aspnetcore-2.0"
+The ASP.NET Core web app templates support authenticators, but they don't provide support for QR code generation. QR code generators make it easier to set up 2FA. This article provides guidance for Razor Pages and MVC apps on how to add [QR code](https://wikipedia.org/wiki/QR_code) generation to the 2FA configuration page.
 
-ASP.NET Core ships with support for authenticator applications for individual authentication. Two factor authentication (2FA) authenticator apps, using a Time-based One-time Password Algorithm (TOTP), are the industry recommended approach for 2FA. 2FA using TOTP is preferred to SMS 2FA. An authenticator app provides a 6 to 8 digit code which users must enter after confirming their username and password. Typically an authenticator app is installed on a smart phone.
+:::moniker-end
+:::moniker range="< aspnetcore-8.0"
 
-The ASP.NET Core web app templates support authenticators, but don't provide support for QRCode generation. QRCode generators ease the setup of 2FA. This document will guide you through adding [QR Code](https://wikipedia.org/wiki/QR_code) generation to the 2FA configuration page.
+The ASP.NET Core web app templates support authenticators but don't provide support for QR code generation. QR code generators make it easier to set up 2FA. This article guides you through adding [QR code](https://wikipedia.org/wiki/QR_code) generation to the 2FA configuration page.
 
-Two factor authentication does not happen using an external authentication provider, such as [Google](xref:security/authentication/google-logins) or [Facebook](xref:security/authentication/facebook-logins). External logins are protected by whatever mechanism the external login provider provides. Consider, for example, the [Microsoft](xref:security/authentication/microsoft-logins) authentication provider requires a hardware key or another 2FA approach. If the default templates enforced "local" 2FA then users would be required to satisfy two 2FA approaches, which is not a commonly used scenario.
+:::moniker-end
 
-## Adding QR Codes to the 2FA configuration page
+Two-factor authentication doesn't happen by using an external authentication provider, such as [Google](xref:security/authentication/google-logins) or [Facebook](xref:security/authentication/facebook-logins). External sign ins are protected by whatever mechanism the external authentication provider supports. For example, the [Microsoft](xref:security/authentication/microsoft-logins) authentication provider requires a hardware key or another 2FA approach. When the default templates require 2FA for both the web app and the external authentication provider, users need to satisfy two 2FA approaches. Requiring two 2FA approaches deviates from established security practices, which typically rely on a single, strong 2FA method for authentication.
 
-These instructions use *qrcode.js* from the https://davidshimjs.github.io/qrcodejs/ repo.
+If you're working with Blazor in ASP.NET Core 8.0 or later, you can find similar guidance in the following articles:
 
-* Download the [qrcode.js javascript library](https://davidshimjs.github.io/qrcodejs/) to the `wwwroot\lib` folder in your project.
+* <xref:blazor/security/qrcodes-for-authenticator-apps>
+* <xref:blazor/security/webassembly/standalone-with-identity/qrcodes-for-authenticator-apps>
 
-::: moniker-end
+## Add QR codes to the 2FA configuration page
 
-::: moniker range=">= aspnetcore-2.1"
+The following instructions use the _qrcode.js_ file from the [https://davidshimjs.github.io/qrcodejs/](https://davidshimjs.github.io/qrcodejs/) repo.
 
-* Follow the instructions in [Scaffold Identity](xref:security/authentication/scaffold-identity) to generate */Areas/Identity/Pages/Account/Manage/EnableAuthenticator.cshtml*.
-* In */Areas/Identity/Pages/Account/Manage/EnableAuthenticator.cshtml*, locate the `Scripts` section at the end of the file:
+1. Download the ['qrcode.js' JavaScript library](https://davidshimjs.github.io/qrcodejs/) to the _wwwroot\lib_ folder in your project.
 
-::: moniker-end
+1. Follow the instructions in [Scaffold Identity](xref:security/authentication/scaffold-identity) to generate the _/Areas/Identity/Pages/Account/Manage/EnableAuthenticator.cshtml_ file.
 
-::: moniker range="= aspnetcore-2.0"
+1. In the _/Areas/Identity/Pages/Account/Manage/EnableAuthenticator.cshtml_ file, locate the `Scripts` section at the end of the file:
 
-* In *Pages/Account/Manage/EnableAuthenticator.cshtml* (Razor Pages) or *Views/Manage/EnableAuthenticator.cshtml* (MVC), locate the `Scripts` section at the end of the file:
+   ```cshtml
+   @section Scripts {
+      <partial name="_ValidationScriptsPartial" />
+   }
+   ```
 
-::: moniker-end
+1. Create a new JavaScript file named _qr.js_ in the _wwwroot/js_ folder, and add the following code that generates the QR code:
 
-::: moniker range=">= aspnetcore-2.0"
+   ```javascript
+   window.addEventListener("load", () => {
+   const uri = document.getElementById("qrCodeData").getAttribute('data-url');
+   new QRCode(document.getElementById("qrCode"),
+      {
+         text: uri,
+         width: 150,
+         height: 150
+      });
+   });
+   ```
 
-```cshtml
-@section Scripts {
-    @await Html.PartialAsync("_ValidationScriptsPartial")
-}
-```
-* Create a new JavaScript file called *qr.js* in *wwwroot/js* and add the following code to generate the QR Code:
+1. Update the `Scripts` section to add a reference to the `qrcode.js` library you previously downloaded.
 
-```javascript
-window.addEventListener("load", () => {
-    const uri = document.getElementById("qrCodeData").getAttribute('data-url');
-    new QRCode(document.getElementById("qrCode"),
-        {
-            text: uri,
-            width: 150,
-            height: 150
-        });
-});
-```
+1. Add the _qr.js_ file with the call that generates the QR code:
 
-* Update the `Scripts` section to add a reference to the `qrcode.js` library previously downloaded.
-* Add the *qr.js* file with the call to generate the QR code:
+   ```cshtml
+   @section Scripts {
+      <partial name="_ValidationScriptsPartial" />
+      <script type="text/javascript" src="~/lib/qrcode.js"></script>
+      <script type="text/javascript" src="~/js/qr.js"></script>
+   }
+   ```
 
-```cshtml
-@section Scripts {
-    @await Html.PartialAsync("_ValidationScriptsPartial")
+1. Delete the paragraph that links you to these instructions.
 
-    <script type="text/javascript" src="~/lib/qrcode.js"></script>
-    <script type="text/javascript" src="~/js/qr.js"></script>
-}
-```
+1. Run your app. Confirm you can scan the QR code and validate the code the authenticator provides.
 
-* Delete the paragraph which links you to these instructions.
+## Change the site name in the QR code
 
-Run your app and ensure that you can scan the QR code and validate the code the authenticator proves.
+The site name in the QR code comes from the project name you select when you create your project. You can change it by looking for the `GenerateQrCodeUri(string email, string unformattedKey)` method in the _/Areas/Identity/Pages/Account/Manage/EnableAuthenticator.cshtml.cs_ file.
 
-## Change the site name in the QR Code
-
-::: moniker-end
-
-::: moniker range=">= aspnetcore-2.1"
-
-The site name in the QR Code is taken from the project name you choose when initially creating your project. You can change it by looking for the `GenerateQrCodeUri(string email, string unformattedKey)` method in the */Areas/Identity/Pages/Account/Manage/EnableAuthenticator.cshtml.cs*.
-
-::: moniker-end
-
-::: moniker range="= aspnetcore-2.0"
-
-The site name in the QR Code is taken from the project name you choose when initially creating your project. You can change it by looking for the `GenerateQrCodeUri(string email, string unformattedKey)` method in the *Pages/Account/Manage/EnableAuthenticator.cshtml.cs* (Razor Pages) file or the *Controllers/ManageController.cs* (MVC) file.
-
-::: moniker-end
-
-::: moniker range=">= aspnetcore-2.0"
-
-The default code from the template looks as follows:
+Here's the default code from the template:
 
 ```csharp
 private string GenerateQrCodeUri(string email, string unformattedKey)
@@ -113,19 +100,22 @@ private string GenerateQrCodeUri(string email, string unformattedKey)
 }
 ```
 
-The second parameter in the call to `string.Format` is your site name, taken from your solution name. It can be changed to any value, but it must always be URL encoded.
+The second parameter in the call to `string.Format` is your site name, which is obtained from your solution name. You can change it to any value, but it must always be URL encoded.
 
-## Using a different QR Code library
+## Use a different QR code library
 
-You can replace the QR Code library with your preferred library. The HTML contains a `qrCode` element into which you can place a QR Code by whatever mechanism your library provides.
+You can replace the QR code library with your preferred library. The HTML contains a `qrCode` element into which you can place a QR code by whatever mechanism your library provides.
 
-The correctly formatted URL for the QR Code is available in the:
+You can find the correctly formatted URL for the QR code in the following locations:
 
-* `AuthenticatorUri` property of the model.
-* `data-url` property in the `qrCodeData` element.
+* `AuthenticatorUri` property of the model
+* `data-url` property in the `qrCodeData` element
 
-## TOTP client and server time skew
+## Check TOTP client and server times
 
-TOTP (Time-based One-Time Password) authentication depends on both the server and authenticator device having an accurate time. Tokens only last for 30 seconds. If TOTP 2FA logins are failing, check that the server time is accurate, and preferably synchronized to an accurate NTP service.
+TOTP (Time-based One-Time Password) authentication depends on both the server and authenticator device having an accurate time. Tokens only last for 30 seconds. If TOTP 2FA sign-in fails, confirm the server time is accurate, and preferably synchronized to an accurate NTP service.
 
-::: moniker-end
+## Related content
+
+- <xref:blazor/security/qrcodes-for-authenticator-apps>
+- <xref:blazor/security/webassembly/standalone-with-identity/qrcodes-for-authenticator-apps>

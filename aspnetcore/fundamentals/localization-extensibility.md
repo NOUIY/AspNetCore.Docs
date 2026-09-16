@@ -1,15 +1,15 @@
 ---
 title: Localization Extensibility
-author: hishamco
+author: wadepickett
 description: Learn how to extend the localization APIs in ASP.NET Core apps.
 monikerRange: '>= aspnetcore-2.1'
-ms.author: riande
-ms.custom: mvc
+ms.author: wpickett
 ms.date: 08/03/2019
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: fundamentals/localization-extensibility
 ---
 # Localization Extensibility
+
+[!INCLUDE[](~/includes/not-latest-version.md)]
 
 By [Hisham Bin Ateya](https://github.com/hishamco)
 
@@ -36,13 +36,13 @@ ASP.NET Core localization APIs have four default providers that can determine th
 * <xref:Microsoft.AspNetCore.Localization.AcceptLanguageHeaderRequestCultureProvider>
 * <xref:Microsoft.AspNetCore.Localization.CustomRequestCultureProvider>
 
-The preceding providers are described in detail in the [Localization Middleware](xref:fundamentals/localization) documentation. If the default providers don't meet your needs, build a custom provider using one of the following approaches:
+The preceding providers are described in detail in the [localization middleware](xref:fundamentals/localization) documentation. If the default providers don't meet your needs, build a custom provider using one of the following approaches:
 
 ### Use CustomRequestCultureProvider
 
 <xref:Microsoft.AspNetCore.Localization.CustomRequestCultureProvider> provides a custom <xref:Microsoft.AspNetCore.Localization.RequestCultureProvider> that uses a simple delegate to determine the current localization culture:
 
-::: moniker range=">= aspnetcore-3.0"
+:::moniker range=">= aspnetcore-3.0"
 
 ```csharp
 options.AddInitialRequestCultureProvider(new CustomRequestCultureProvider(async context =>
@@ -62,9 +62,9 @@ options.AddInitialRequestCultureProvider(new CustomRequestCultureProvider(async 
 }));
 ```
 
-::: moniker-end
+:::moniker-end
 
-::: moniker range="< aspnetcore-3.0"
+:::moniker range="< aspnetcore-3.0"
 
 ```csharp
 options.RequestCultureProviders.Insert(0, new CustomRequestCultureProvider(async context =>
@@ -84,9 +84,9 @@ options.RequestCultureProviders.Insert(0, new CustomRequestCultureProvider(async
 }));
 ```
 
-::: moniker-end
+:::moniker-end
 
-### Use a new implemetation of RequestCultureProvider
+### Use a new implementation of RequestCultureProvider
 
 A new implementation of <xref:Microsoft.AspNetCore.Localization.RequestCultureProvider> can be created that determines the request culture information from a custom source. For example, the custom source can be a configuration file or database.
 
