@@ -1,10 +1,9 @@
 ---
 title: Limit the lifetime of protected payloads in ASP.NET Core
-author: rick-anderson
+author: wadepickett
 description: Learn how to limit the lifetime of a protected payload using the ASP.NET Core Data Protection APIs.
-ms.author: riande
+ms.author: wpickett
 ms.date: 10/14/2016
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: security/data-protection/consumer-apis/limited-lifetime-payloads
 ---
 # Limit the lifetime of protected payloads in ASP.NET Core
