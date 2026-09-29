@@ -1,10 +1,9 @@
 ---
 title: Key management in ASP.NET Core
-author: rick-anderson
+author: tdykstra
 description: Learn implementation details of the ASP.NET Core Data Protection key management APIs.
-ms.author: riande
+ms.author: tdykstra
 ms.date: 10/14/2016
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
 uid: security/data-protection/implementation/key-management
 ---
 # Key management in ASP.NET Core
@@ -24,7 +23,7 @@ The data protection system automatically manages the lifetime of master keys use
 Created, active, and expired keys may all be used to unprotect incoming payloads. Revoked keys by default may not be used to unprotect payloads, but the application developer can [override this behavior](xref:security/data-protection/consumer-apis/dangerous-unprotect#data-protection-consumer-apis-dangerous-unprotect) if necessary.
 
 >[!WARNING]
-> The developer might be tempted to delete a key from the key ring (e.g., by deleting the corresponding file from the file system). At that point, all data protected by the key is permanently undecipherable, and there's no emergency override like there's with revoked keys. Deleting a key is truly destructive behavior, and consequently the data protection system exposes no first-class API for performing this operation.
+> The developer might be tempted to delete a key from the key ring (for example by deleting the corresponding file from the file system). At that point, all data protected by the key is permanently undecipherable, and there's no emergency override like there's with revoked keys. Deleting a key is truly destructive behavior.
 
 ## Default key selection
 
@@ -65,13 +64,18 @@ When the data protection system initializes, it reads the key ring from the unde
 
 The data protection system exposes an interface `IKeyManager` that can be used to inspect and make changes to the key ring. The DI system that provided the instance of `IDataProtectionProvider` can also provide an instance of `IKeyManager` for your consumption. Alternatively, you can pull the `IKeyManager` straight from the `IServiceProvider` as in the example below.
 
-Any operation which modifies the key ring (creating a new key explicitly or performing a revocation) will invalidate the in-memory cache. The next call to `Protect` or `Unprotect` will cause the data protection system to reread the key ring and recreate the cache.
+Any operation which modifies the key ring (creating a new key explicitly or performing a revocation) will invalidate the in-memory cache in the process performing that operation. It doesn't automatically invalidate caches in other processes sharing the repository. The next call to `Protect` or `Unprotect` will cause the data protection system to reread the key ring and recreate the cache.
+
+> [!IMPORTANT]
+> In a multi-instance deployment, Data Protection key-ring caches are maintained independently by each process. Revoking a key in one instance updates the shared key repository and invalidates that instance's cache, but it doesn't immediately invalidate caches in other running instances.
+>
+> Other instances normally observe the revocation during their next key-ring refresh or another local refresh event. Until then, a warmed instance might continue to unprotect data created with the revoked key or use that key for new protection operations.
+>
+> If revocation must take effect immediately across the deployment, persist the revocation and then restart or recycle every application instance, or use an application-specific mechanism that causes every instance to reload its key ring. Verify that all instances have refreshed before considering revocation complete. Plan for the availability impact of coordinated restarts.
 
 The sample below demonstrates using the `IKeyManager` interface to inspect and manipulate the key ring, including revoking existing keys and generating a new key manually.
 
 [!code-csharp[](key-management/samples/key-management.cs)]
-
-[!INCLUDE[about the series](~/includes/code-comments-loc.md)]
 
 ## Key storage
 

@@ -1,11 +1,9 @@
 ---
 title: What's new in ASP.NET Core 2.2
-author: rick-anderson
+author: tdykstra
 description: Learn about the new features in ASP.NET Core 2.2.
-ms.author: riande
-ms.custom: mvc
-ms.date: 12/05/2019
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.author: tdykstra
+ms.date: 12/5/2019
 uid: aspnetcore-2.2
 ---
 # What's new in ASP.NET Core 2.2
@@ -78,23 +76,23 @@ For more information, see [in-process hosting for IIS](xref:host-and-deploy/aspn
 
 ASP.NET Core 2.2 introduces a Java Client for SignalR. This client supports connecting to an ASP.NET Core SignalR Server from Java code, including Android apps.
 
-For more information, see [ASP.NET Core SignalR Java client](../signalr/java-client.md?view=aspnetcore-2.2).
+For more information, see [ASP.NET Core SignalR Java client](../signalr/java-client.md?view=aspnetcore-2.2&preserve-view=true).
 
 ## CORS improvements
 
-In earlier versions of ASP.NET Core, CORS Middleware allows `Accept`, `Accept-Language`, `Content-Language`, and `Origin` headers to be sent regardless of the values configured in `CorsPolicy.Headers`. In 2.2, a CORS Middleware policy match is only possible when the headers sent in `Access-Control-Request-Headers` exactly match the headers stated in `WithHeaders`.
+In earlier versions of ASP.NET Core, CORS middleware allows `Accept`, `Accept-Language`, `Content-Language`, and `Origin` headers to be sent regardless of the values configured in `CorsPolicy.Headers`. In 2.2, a CORS middleware policy match is only possible when the headers sent in `Access-Control-Request-Headers` exactly match the headers stated in `WithHeaders`.
 
-For more information, see [CORS Middleware](xref:security/cors?view=aspnetcore-2.2#set-the-allowed-request-headers).
+For more information, see [CORS middleware](xref:security/cors?view=aspnetcore-2.2#set-the-allowed-request-headers).
 
 ## Response compression
 
 ASP.NET Core 2.2 can compress responses with the [Brotli compression format](https://tools.ietf.org/html/rfc7932).
 
-For more information, see [Response Compression Middleware supports Brotli compression](xref:performance/response-compression?view=aspnetcore-2.2#brotli-compression-provider).
+For more information, see [response compression middleware supports Brotli compression](xref:performance/response-compression?view=aspnetcore-2.2#brotli-compression-provider).
 
 ## Project templates
 
-ASP.NET Core web project templates were updated to [Bootstrap 4](https://getbootstrap.com/docs/4.1/migration/) and [Angular 6](https://blog.angular.io/version-6-of-angular-now-available-cc56b0efa7a4). The new look is visually simpler and makes it easier to see the important structures of the app.
+ASP.NET Core web project templates were updated to [Bootstrap 4](https://getbootstrap.com/docs/4.1/migration/) and Angular 6. The new look is visually simpler and makes it easier to see the important structures of the app.
 
 ![Home or Index page](~/tutorials/razor-pages/razor-pages-start/_static/home2.2.png)
 
@@ -110,6 +108,10 @@ In ASP.NET Core 2.2, the performance of `SocketsHttpHandler` was improved by red
 
 For more information, see [the pull request that made this improvement](https://github.com/dotnet/corefx/pull/32568).
 
-## Additional information
+## Breaking changes
+
+Use the articles in [Breaking changes in .NET](/dotnet/core/compatibility/breaking-changes) to find breaking changes that might apply when upgrading an app to a newer version of .NET.
+
+## Additional resources
 
 For the complete list of changes, see the [ASP.NET Core 2.2 Release Notes](https://github.com/dotnet/aspnetcore/releases/tag/2.2.0).

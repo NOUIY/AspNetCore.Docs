@@ -1,10 +1,9 @@
 ---
 title: Handle requests with controllers in ASP.NET Core MVC
 author: ardalis
-description: 
-ms.author: riande
-ms.date: 12/05/2019
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+description: Learn how ASP.NET Core MVC controllers and Actions handle requests and return responses.
+ms.author: tdykstra
+ms.date: 04/27/2026
 uid: mvc/controllers/actions
 ---
 # Handle requests with controllers in ASP.NET Core MVC
@@ -15,7 +14,7 @@ Controllers, actions, and action results are a fundamental part of how developer
 
 ## What is a Controller?
 
-A controller is used to define and group a set of actions. An action (or *action method*) is a method on a controller which handles requests. Controllers logically group similar actions together. This aggregation of actions allows common sets of rules, such as routing, caching, and authorization, to be applied collectively. Requests are mapped to actions through [routing](xref:mvc/controllers/routing).
+A controller is used to define and group a set of actions. An action (or *action method*) is a method on a controller which handles requests. Controllers logically group similar actions together. This aggregation of actions allows common sets of rules, such as routing, caching, and authorization, to be applied collectively. Requests are mapped to actions through [routing](xref:mvc/controllers/routing). Controllers are activated and disposed on a per request basis.
 
 By convention, controller classes:
 
@@ -30,7 +29,7 @@ A controller is an instantiable class, usually [public](/dotnet/csharp/language-
 
 A controller class must not have an associated `[NonController]` attribute.
 
-Controllers should follow the [Explicit Dependencies Principle](/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles#explicit-dependencies). There are a couple of approaches to implementing this principle. If multiple controller actions require the same service, consider using [constructor injection](xref:mvc/controllers/dependency-injection#constructor-injection) to request those dependencies. If the service is needed by only a single action method, consider using [Action Injection](xref:mvc/controllers/dependency-injection#action-injection-with-fromservices) to request the dependency.
+Controllers should follow the [Explicit Dependencies Principle](/dotnet/architecture/modern-web-apps-azure/architectural-principles#explicit-dependencies). There are a couple of approaches to implementing this principle. If multiple controller actions require the same service, consider using [constructor injection](xref:mvc/controllers/dependency-injection#constructor-injection) to request those dependencies. If the service is needed by only a single action method, consider using [Action Injection](xref:mvc/controllers/dependency-injection#action-injection-with-fromservices) to request the dependency.
 
 Within the **M**odel-**V**iew-**C**ontroller pattern, a controller is responsible for the initial processing of the request and instantiation of the model. Generally, business decisions should be performed within the model.
 
@@ -44,11 +43,11 @@ Public methods on a controller, except those with the `[NonAction]` attribute, a
 
 Action methods should contain logic for mapping a request to a business concern. Business concerns should typically be represented as services that the controller accesses through [dependency injection](xref:mvc/controllers/dependency-injection). Actions then map the result of the business action to an application state.
 
-Actions can return anything, but frequently return an instance of `IActionResult` (or `Task<IActionResult>` for async methods) that produces a response. The action method is responsible for choosing *what kind of response*. The action result *does the responding*.
+Actions can return anything, but they frequently return an instance of `IActionResult` (or `Task<IActionResult>` for async methods) that produces a response. The action method is responsible for choosing *what kind of response*. The action result *does the responding*.
 
 ### Controller Helper Methods
 
-Controllers usually inherit from [Controller](/dotnet/api/microsoft.aspnetcore.mvc.controller), although this isn't required. Deriving from `Controller` provides access to three categories of helper methods:
+Controllers usually inherit from <xref:Microsoft.AspNetCore.Mvc.Controller>, although this isn't required. Deriving from `Controller` provides access to three categories of helper methods:
 
 #### 1. Methods resulting in an empty response body
 
@@ -74,17 +73,17 @@ There are two result types within this category: [View](xref:mvc/views/overview)
 
 * **View**
 
-    This type returns a view which uses a model to render HTML. For example, `return View(customer);` passes a model to the view for data-binding.
+    This type returns a view, which uses a model to render HTML. For example, `return View(customer);` passes a model to the view for data-binding.
 
 * **Formatted Response**
 
     This type returns JSON or a similar data exchange format to represent an object in a specific manner. For example, `return Json(customer);` serializes the provided object into JSON format.
-    
-    Other common methods of this type include `File` and `PhysicalFile`. For example, `return PhysicalFile(customerFilePath, "text/xml");` returns [PhysicalFileResult](/dotnet/api/microsoft.aspnetcore.mvc.physicalfileresult).
+
+    Other common methods of this type include `File` and `PhysicalFile`. For example, `return PhysicalFile(customerFilePath, "text/xml");` returns <xref:Microsoft.AspNetCore.Mvc.PhysicalFileResult>.
 
 #### 3. Methods resulting in a non-empty response body formatted in a content type negotiated with the client
 
-This category is better known as **Content Negotiation**. [Content negotiation](xref:web-api/advanced/formatting#content-negotiation) applies whenever an action returns an [ObjectResult](/dotnet/api/microsoft.aspnetcore.mvc.objectresult) type or something other than an [IActionResult](/dotnet/api/microsoft.aspnetcore.mvc.iactionresult) implementation. An action that returns a non-`IActionResult` implementation (for example, `object`) also returns a Formatted Response.
+This category is better known as **Content Negotiation**. [Content negotiation](xref:web-api/advanced/formatting#content-negotiation) applies whenever an action returns an <xref:Microsoft.AspNetCore.Mvc.ObjectResult> type or something other than an <xref:Microsoft.AspNetCore.Mvc.IActionResult> implementation. An action that returns a non-`IActionResult` implementation (for example, `object`) also returns a Formatted Response.
 
 Some helper methods of this type include `BadRequest`, `CreatedAtRoute`, and `Ok`. Examples of these methods include `return BadRequest(modelState);`, `return CreatedAtRoute("routename", values, newobject);`, and `return Ok(value);`, respectively. Note that `BadRequest` and `Ok` perform content negotiation only when passed a value; without being passed a value, they instead serve as HTTP Status Code result types. The `CreatedAtRoute` method, on the other hand, always performs content negotiation since its overloads all require that a value be passed.
 
@@ -95,6 +94,7 @@ Applications typically share parts of their workflow. Examples include an app th
 Most filter attributes, such as `[Authorize]`, can be applied at the controller or action level depending upon the desired level of granularity.
 
 Error handling and response caching are often cross-cutting concerns:
+
 * [Handle errors](xref:mvc/controllers/filters#exception-filters)
 * [Response Caching](xref:performance/caching/response)
 

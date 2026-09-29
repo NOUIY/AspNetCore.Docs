@@ -1,6 +1,3 @@
----
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
----
 ### View the Identity database
 
 # [Visual Studio](#tab/visual-studio) 
@@ -10,7 +7,7 @@ no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cook
 
 ![Contextual menu on AspNetUsers table in SQL Server Object Explorer](~/security/authentication/accconfirm/_static/ssox.png)
 
-# [.NET Core CLI](#tab/netcore-cli)
+# [.NET CLI](#tab/net-cli)
 
 There are many third party tools you can download to manage and view a SQLite database, for example [DB Browser for SQLite](https://sqlitebrowser.org/).
 

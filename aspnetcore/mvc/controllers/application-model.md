@@ -1,10 +1,9 @@
 ---
 title: Work with the application model in ASP.NET Core
-author: rick-anderson
+author: tdykstra
 description: Learn how to read and manipulate the application model to modify how MVC elements behave in ASP.NET Core.
-ms.author: riande
-ms.date: 04/05/2021
-no-loc: [Home, Privacy, Kestrel, appsettings.json, "ASP.NET Core Identity", cookie, Cookie, Blazor, "Blazor Server", "Blazor WebAssembly", "Identity", "Let's Encrypt", Razor, SignalR]
+ms.author: tdykstra
+ms.date: 09/06/2026
 uid: mvc/controllers/application-model
 ---
 # Work with the application model in ASP.NET Core
@@ -166,14 +165,14 @@ The following example applies a convention to routes that aren't using attribute
 
 [!code-csharp[](./application-model/sample/src/AppModelSample/Controllers/NamespaceRoutingController.cs?highlight=7-8)]
 
-::: moniker range="<= aspnetcore-2.2"
+:::moniker range="<= aspnetcore-2.2"
 
 ## Application model usage in `WebApiCompatShim`
 
 ASP.NET Core MVC uses a different set of conventions from ASP.NET Web API 2. Using custom conventions, you can modify an ASP.NET Core MVC app's behavior to be consistent with that of a web API app. Microsoft ships the [`WebApiCompatShim` NuGet package](https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.WebApiCompatShim) specifically for this purpose.
 
 > [!NOTE]
-> For more information on migration from ASP.NET Web API, see <xref:migration/webapi>.
+> For more information on migration from ASP.NET Web API, see <xref:migration/fx-to-core/areas/webapi>.
 
 To use the Web API Compatibility Shim:
 
@@ -209,7 +208,7 @@ The conventions provided by the shim are only applied to parts of the app that h
 
 In addition to a set of conventions, the compatibility package includes a <xref:System.Web.Http.ApiController?displayProperty=fullName> base class that replaces the one provided by web API. This allows your web API controllers written for web API and inheriting from its `ApiController` to work while running on ASP.NET Core MVC. All of the [`UseWebApi*`](xref:Microsoft.AspNetCore.Mvc.WebApiCompatShim) attributes listed earlier are applied to the base controller class. The `ApiController` exposes properties, methods, and result types that are compatible with those found in web API.
 
-::: moniker-end
+:::moniker-end
 
 ## Use `ApiExplorer` to document an app
 
@@ -218,3 +217,66 @@ The application model exposes an <xref:Microsoft.AspNetCore.Mvc.ApplicationModel
 [!code-csharp[](./application-model/sample/src/AppModelSample/Conventions/EnableApiExplorerApplicationConvention.cs)]
 
 Using this approach (and additional conventions if required), API visibility is enabled or disabled at any level within an app.
+
+### Custom API description providers with `IApiDescriptionProvider`
+
+:::moniker range=">= aspnetcore-9.0"
+
+Starting with .NET 9, ASP.NET Core includes built-in OpenAPI document generation in the [`Microsoft.AspNetCore.OpenApi`](https://www.nuget.org/packages/Microsoft.AspNetCore.OpenApi) package. To programmatically inspect or modify the generated OpenAPI output, use document, operation, and schema transformers rather than implementing <xref:Microsoft.AspNetCore.Mvc.ApiExplorer.IApiDescriptionProvider> directly. For more information, see <xref:fundamentals/openapi/aspnetcore-openapi>.
+
+:::moniker-end
+
+:::moniker range=">= aspnetcore-6.0 < aspnetcore-9.0"
+
+> [!NOTE]
+> <xref:Microsoft.AspNetCore.Mvc.ApiExplorer.IApiDescriptionProvider> is an advanced extensibility point intended for framework and library authors. Most apps don't need to implement it. Starting with .NET 9, use the built-in OpenAPI document, operation, and schema transformers to customize generated API documentation. For more information, see <xref:fundamentals/openapi/aspnetcore-openapi>.
+
+ASP.NET Core uses <xref:Microsoft.AspNetCore.Mvc.ApiExplorer.IApiDescriptionProvider> implementations to discover endpoints and generate <xref:Microsoft.AspNetCore.Mvc.ApiExplorer.ApiDescription> metadata. Tools such as Swashbuckle and NSwag inspect these `ApiDescription` instances when producing API documentation.
+
+Implement <xref:Microsoft.AspNetCore.Mvc.ApiExplorer.IApiDescriptionProvider> to programmatically inspect or modify `ApiDescription` instances produced by the framework:
+
+* <xref:Microsoft.AspNetCore.Mvc.ApiExplorer.IApiDescriptionProvider.OnProvidersExecuting%2A>: Executes in ascending order of the <xref:Microsoft.AspNetCore.Mvc.ApiExplorer.IApiDescriptionProvider.Order> property to construct `ApiDescription` metadata for discovered endpoints.
+* <xref:Microsoft.AspNetCore.Mvc.ApiExplorer.IApiDescriptionProvider.OnProvidersExecuted%2A>: Executes in reverse order after all providers have executed, allowing customization or enrichment of generated `ApiDescription` instances.
+
+The following example demonstrates a custom `IApiDescriptionProvider` that adds custom metadata properties to discovered API descriptions:
+
+```csharp
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+
+public class CustomApiDescriptionProvider : IApiDescriptionProvider
+{
+    // Execute after the framework's default ApiDescriptionProvider (Order = -1000)
+    public int Order => 0;
+
+    public void OnProvidersExecuting(ApiDescriptionProviderContext context)
+    {
+        // No action required during initial execution phase
+    }
+
+    public void OnProvidersExecuted(ApiDescriptionProviderContext context)
+    {
+        foreach (var apiDescription in context.Results)
+        {
+            // Enrich or modify ApiDescription metadata
+            apiDescription.Properties["CustomMetadata"] = "CustomValue";
+        }
+    }
+}
+```
+
+Register the custom provider with dependency injection using <xref:Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddEnumerable%2A> in `Program.cs`:
+
+```csharp
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+builder.Services.TryAddEnumerable(
+    ServiceDescriptor.Transient<IApiDescriptionProvider, CustomApiDescriptionProvider>());
+
+var app = builder.Build();
+```
+
+:::moniker-end
